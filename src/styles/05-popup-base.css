@@ -1,0 +1,11 @@
+.bingo{position:fixed;inset:0;z-index:80;background:radial-gradient(circle at 50% 45%,#2a1a00dd,#05030aee 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;overflow:hidden}
+.bingo[hidden]{display:none}
+.rays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg at 50% 50%,#f6b93b40 0 9deg,transparent 9deg 22deg);animation:spin 24s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bt{position:relative;font:900 clamp(56px,16vw,140px)/1 var(--display);background:linear-gradient(180deg,#fff2b0,#f6b93b 60%,#b9770e);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 24px #f6b93b99);animation:pop2 .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop2{from{transform:scale(.3);opacity:0}}
+.bcard{position:relative;border:3px solid var(--gold);border-radius:99px;padding:.3em 1.4em;font:800 clamp(18px,4vw,30px) var(--display);color:#fff;background:#000a}
+.bwin{position:relative;font:900 clamp(24px,6vw,52px) var(--display);color:#fff;text-shadow:0 0 18px #f6b93b}
+#confetti i{position:absolute;top:-20px;width:10px;height:16px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media(max-width:899px){.tb{width:4.8em;height:4.8em}.tkp .tickets{flex-wrap:wrap;height:auto}.tkp .tk{flex:1 1 44%;max-width:none;min-height:12em}.tkp .frame{height:auto}.banner{font-size:15px}}

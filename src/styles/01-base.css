@@ -1,0 +1,23 @@
+[hidden]{display:none!important}
+/* Layout: desktop is the mockup art with live panels placed exactly over its panels; phone stacks them under the globe. */
+:root{--bg:#04061a;--panel:#0c1438;--line:#2a3b86;--fg:#e8ecff;--mut:#8d99c9;--gold:#f6b93b;--gold2:#ffd36e;--blue:#2f6bff;--green:#27c26a;--red:#ef4444;--stage:url(../assets/stage.webp);--display:'Rubik',system-ui,sans-serif;--body:'Nunito Sans',system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.35 var(--body);padding-block:12px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);margin:0}
+.arena{position:relative;width:100%;max-width:1536px;margin:0 auto;display:flex;flex-direction:column;gap:12px;font-size:14px}
+.gp{background:linear-gradient(180deg,#101a45,#0a1030);border:1px solid var(--line);border-radius:.9em;padding:.8em;min-width:0;overflow:hidden}
+.pt{font:700 1.15em var(--display);color:var(--gold2);display:flex;justify-content:space-between;align-items:center;margin-bottom:.5em}
+.mut{color:var(--mut)}
+.chips{display:flex;gap:.6em;align-items:center;justify-content:space-around;height:100%}
+.chip{color:var(--mut);font-size:.82em;line-height:1.2;display:flex;align-items:center;gap:.5em}.chip b{display:block;color:var(--fg);font:600 1.25em var(--display);font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--green)}
+.sep{width:1px;align-self:stretch;background:var(--line)}
+.logo{display:none;font:800 24px var(--display);color:var(--gold);letter-spacing:.5px}.logo small{display:block;font:600 9px var(--body);letter-spacing:3px;color:var(--mut)}
+.ring{width:min(62%,9.5em);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin:.2em auto .5em;background:conic-gradient(var(--gold) 360deg,var(--line) 0);flex:none}
+.ring div{width:86%;aspect-ratio:1;border-radius:50%;background:#0a1030;display:grid;place-items:center;text-align:center;font-size:.8em;color:var(--mut);align-content:center}
+.timer{font:700 2.1em var(--display);font-variant-numeric:tabular-nums;color:var(--fg);line-height:1}
+.row{display:flex;justify-content:space-between;align-items:baseline;padding:.3em 0;color:var(--mut);font-variant-numeric:tabular-nums;border-top:1px solid #ffffff10}.row b{color:var(--fg);font-size:1.1em}
+button{font:700 1em var(--display);cursor:pointer;border:0;border-radius:.7em;padding:.7em 1em;color:#2a1c00;background:linear-gradient(180deg,var(--gold2),var(--gold));width:100%;box-shadow:0 0 14px #f6b93b55}
+button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+button.ghost{background:var(--panel);color:var(--fg);border:1px solid var(--line);width:auto;box-shadow:none}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
