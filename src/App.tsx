@@ -8,8 +8,7 @@ import { CardModal } from './components/CardModal'
 import { ChatPanel } from './components/ChatPanel'
 import { Hero } from './components/Hero'
 import { LeftPanel, NextBox } from './components/LeftPanel'
-import { PotBar } from './components/PotBar'
-import { SettingsPanel } from './components/SettingsPanel'
+import { TopBar } from './components/TopBar'
 import { TicketsPanel } from './components/TicketsPanel'
 import { WinPopup } from './components/WinPopup'
 import { WinnersPanel } from './components/WinnersPanel'
@@ -19,10 +18,11 @@ export default function App() {
 
   useEffect(() => {
     game.start()
-    // Browsers only allow audio after a gesture.
+    // browsers only let sound start from a tap or key press
     const unlock = () => SFX.init()
-    addEventListener('pointerdown', unlock)
-    return () => removeEventListener('pointerdown', unlock)
+    const evs = ['pointerdown', 'keydown', 'touchend'] as const
+    evs.forEach(e => window.addEventListener(e, unlock, { passive: true }))
+    return () => evs.forEach(e => window.removeEventListener(e, unlock))
   }, [])
 
   useEffect(() => {
@@ -31,11 +31,8 @@ export default function App() {
 
   return (
     <>
-      <div className="arena">
-        <div className="logo">
-          QUICK BINGO<small>PLAY · WIN · ENJOY</small>
-        </div>
-        <PotBar />
+      <div className={'arena' + (g.playing ? ' playing' : g.phase !== 'buy' ? ' watching' : '')}>
+        <TopBar />
         <LeftPanel />
         <NextBox />
         <Hero />
@@ -47,7 +44,6 @@ export default function App() {
         <div className="cover" />
       </div>
       <WinPopup />
-      <SettingsPanel />
       <CardModal />
     </>
   )

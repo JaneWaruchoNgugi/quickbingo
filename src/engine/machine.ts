@@ -8,8 +8,27 @@ export interface Ball {
   vx: number
   vy: number
   vz: number
+  /** position before the last physics step, for interpolated drawing */
+  px?: number
+  py?: number
+  pz?: number
+  /** slowly drifting random push, so balls tumble instead of jittering */
+  wx?: number
+  wy?: number
+  wz?: number
   gone?: boolean
-  pick?: { t: number; t0?: number; k: number; cb?: () => void; ex: number }
+  pick?: Pick
+}
+
+interface Pick {
+  t0?: number
+  /** 0..1 progress towards the exit; the ball shrinks as it enters the pipe */
+  k: number
+  sx?: number
+  sy?: number
+  ex: number
+  ey: number
+  cb?: () => void
 }
 
 /** Physics state shared between the game (which asks for balls) and the canvas renderer. */
@@ -34,14 +53,17 @@ export class MachineState {
     }))
   }
 
-  /** Lift ball `n` out of the swirl towards the exit; `cb` fires when it reaches the top. */
-  pick(n: number, cb: () => void, ex = 0) {
-    let b = this.balls.find(x => x.n === n && !x.pick)
+  /**
+   * Draw ball `n` out of the swirl into the pipe mouth at (`ex`, `ey`) in machine units (screen
+   * space, unrotated); `cb` fires when it has entered the pipe.
+   */
+  pick(n: number, cb: () => void, ex = 0, ey = R * 0.92) {
+    let b = this.balls.find(x => x.n === n && !x.pick && !x.gone)
     if (!b) {
       b = { n, x: 0, y: 100, z: 0, vx: 0, vy: 0, vz: 0 }
       this.balls.push(b)
     }
-    b.pick = { t: 0, k: 0, cb, ex }
+    b.pick = { k: 0, cb, ex, ey }
   }
 
   remove(n: number) {
@@ -53,6 +75,13 @@ export class MachineState {
 const W = 640
 const R = 300
 const BR = 46
+/** Machine units → globe viewBox units (canvas is 772.4 viewBox units wide, see 02-panels.css). */
+export const UNIT_VB = ((W / 2 - 24) / R) * (772.4 / W)
+/** Fixed physics step: motion is the same on 60 Hz and 120 Hz screens. */
+const STEP = 1000 / 60
+/** Scale of a picked ball when it reaches the pipe mouth (matches the pipe ball). */
+export const PICK_SCALE = 0.55
+const PICK_MS = 750
 
 const mix = (h: string, t: number) => {
   const n = parseInt(h.slice(1), 16)
@@ -69,44 +98,31 @@ export function startMachine(cv: HTMLCanvasElement, ms: MachineState): () => voi
   const c = cv.getContext('2d')!
   let ang = 0
   let last = performance.now()
-  let dt = 16.7
+  let acc = 0
+  let power = 0
   let raf = 0
 
-  function frame() {
+  function physics(red: boolean) {
     const bs = ms.balls
-    const nw = performance.now()
-    dt = Math.min(50, nw - last)
-    last = nw
-    const red = matchMedia('(prefers-reduced-motion:reduce)').matches
-    const W1 = ms.busy ? 1 : 0
-    const sw = 0.1 + W1 * 0.42
-    const lift = 0.16 + W1 * 0.95
+    // the air jet spins up and down smoothly instead of switching on and off
+    power += ((ms.busy ? 1 : 0) - power) * (1 - Math.exp(-STEP / 380))
+    const sw = 0.1 + power * 0.42
+    const lift = 0.16 + power * 0.95
+    const jig = 0.5 + power * 0.7
     bs.forEach(b => {
-      if (b.gone) return
-      if (b.pick) {
-        const p = b.pick
-        const now = performance.now()
-        if (!p.t0) p.t0 = now
-        const el = now - p.t0
-        const f = 1 - Math.pow(1 - 0.07, dt / 16.7)
-        b.x += ((p.ex || 0) - b.x) * f * 0.9
-        b.z += (0 - b.z) * f * 0.9
-        b.y += (R + BR * 1.3 - b.y) * f * 0.55 + (dt / 16.7) * 1.2
-        p.k = 0
-        if (b.y > R * 0.92 || el > 1500) {
-          const cb = p.cb
-          b.pick = undefined
-          b.gone = true
-          cb && cb()
-        }
-        return
-      }
+      b.px = b.x
+      b.py = b.y
+      b.pz = b.z
+      if (b.gone || b.pick) return
+      b.wx = ((b.wx ?? 0) + (Math.random() - 0.5) * 0.3) * 0.9
+      b.wy = ((b.wy ?? 0) + (Math.random() - 0.5) * 0.3) * 0.9
+      b.wz = ((b.wz ?? 0) + (Math.random() - 0.5) * 0.3) * 0.9
       const r = Math.hypot(b.x, b.z) || 1
       const tx = -b.z / r
       const tz = b.x / r
-      b.vx += tx * sw * (0.4 + r / R) + (Math.random() - 0.5) * 0.5
-      b.vz += tz * sw * (0.4 + r / R) + (Math.random() - 0.5) * 0.5
-      b.vy += 0.24 + (Math.random() - 0.5) * 0.5
+      b.vx += tx * sw * (0.4 + r / R) + b.wx * jig
+      b.vz += tz * sw * (0.4 + r / R) + b.wz * jig
+      b.vy += 0.24 + b.wy * jig
       if (r < 170 && b.y > -90) b.vy -= lift * (1.15 - r / 170)
       if (r > 110) {
         b.vx -= (b.x / r) * sw * 0.5
@@ -183,21 +199,69 @@ export function startMachine(cv: HTMLCanvasElement, ms: MachineState): () => voi
         }
 
     ang += 0.012
+  }
+
+  /** A picked ball glides (in screen space) to its pipe mouth, speeding up as the pipe sucks it in. */
+  function pickMove(b: Ball, now: number, ca: number, sa: number) {
+    const p = b.pick!
+    if (p.t0 === undefined) {
+      p.t0 = now
+      p.sx = b.x * ca + b.z * sa
+      p.sy = b.y
+    }
+    const k = Math.min(1, (now - p.t0) / PICK_MS)
+    const ex = k * k * (3 - 2 * k)
+    const ey = k * k * (2 - k)
+    // a small sideways wobble while it is lifted out of the pile
+    const wob = Math.sin(k * Math.PI * 2) * (1 - k) * 10
+    b.x = p.sx! + (p.ex - p.sx!) * ex + wob
+    b.y = p.sy! + (p.ey - p.sy!) * ey
+    b.z = 0
+    b.px = b.x
+    b.py = b.y
+    b.pz = 0
+    p.k = k
+    if (k >= 1) {
+      const cb = p.cb
+      b.pick = undefined
+      b.gone = true
+      cb && cb()
+    }
+  }
+
+  function frame() {
+    const nw = performance.now()
+    acc += Math.min(100, nw - last)
+    last = nw
+    const red = matchMedia('(prefers-reduced-motion:reduce)').matches
+    let steps = 0
+    while (acc >= STEP && steps++ < 5) {
+      physics(red)
+      acc -= STEP
+    }
+    if (acc > STEP) acc = 0
+    // draw between the last two physics states so motion stays smooth at any frame rate
+    const al = acc / STEP
     const ca = Math.cos(ang)
     const sa = Math.sin(ang)
+    ms.balls.forEach(b => b.pick && !b.gone && pickMove(b, nw, ca, sa))
     c.clearRect(0, 0, W, W)
-    const pr = bs
+    const pr = ms.balls
       .filter(b => !b.gone)
       .map(b => {
-        const x = b.x * ca + b.z * sa
-        const z = -b.x * sa + b.z * ca
-        const f = 0.88 + 0.2 * ((z + R) / (2 * R))
-        return { b, x: W / 2 + ((x * (W / 2 - 24)) / R) * f, y: W / 2 + ((b.y * (W / 2 - 24)) / R) * f, z: b.pick ? 1e4 : z, s: f }
+        const bx = (b.px ?? b.x) + (b.x - (b.px ?? b.x)) * al
+        const by = (b.py ?? b.y) + (b.y - (b.py ?? b.y)) * al
+        const bz = (b.pz ?? b.z) + (b.z - (b.pz ?? b.z)) * al
+        // picked balls already live in screen space
+        const x = b.pick ? bx : bx * ca + bz * sa
+        const z = b.pick ? R : -bx * sa + bz * ca
+        const f = b.pick ? 1 : 0.88 + 0.2 * ((z + R) / (2 * R))
+        return { b, x: W / 2 + ((x * (W / 2 - 24)) / R) * f, y: W / 2 + ((by * (W / 2 - 24)) / R) * f, z: b.pick ? 1e4 : z, s: f }
       })
       .sort((p, q) => p.z - q.z)
 
     pr.forEach(p => {
-      const r = BR * p.s * (p.b.pick ? 1 + 0.35 * p.b.pick.k : 1)
+      const r = BR * p.s * (p.b.pick ? 1 - (1 - PICK_SCALE) * p.b.pick.k : 1)
       const rm = rimOf(p.b.n)
       const c0 = rm[0]
       const c1 = rm[1]

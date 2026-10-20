@@ -1,0 +1,26 @@
+/* While the player has cards in a running round: no card picking, the cards panel takes the room. */
+.arena.playing .mpick,.arena.playing .leftp .qpick,.arena.playing .leftp>button{display:none!important}
+@media(min-width:900px){
+ .arena.playing .leftp{height:20.6%!important}
+ .arena.playing .tkp{top:32.8%!important;height:66%!important}
+}
+@media(max-width:899px){
+ /* cards sit right under the machine; the empty strip below the podium is trimmed so they show sooner */
+ .arena.playing .tkp{order:1}
+ .arena.playing .banner{order:2}
+ .arena.playing .hero{aspect-ratio:1/1.02}
+ .arena.playing .tkp{margin-top:-6px}
+}
+/* Phone, round running without cards of this round (none, or saved for the next one): hide the empty cards panel, show the called numbers there. */
+@media(max-width:899px){
+ .arena.watching .tkp{display:none}
+ .arena.watching .calledp{order:1}
+}
+/* Phone: machine sits higher, trimming the empty sky above the globe, so everything below moves up too. */
+@media(max-width:899px){
+ .hero{aspect-ratio:1/1.19;margin-top:-4px}
+ .hero .gobj{top:-3.5%}
+ .arena.playing .hero{aspect-ratio:1/.97}
+}
+/* the free-space star on the player's cards: smaller than the number marks */
+.tkp .tk .grid5 .c.f{height:70%!important}

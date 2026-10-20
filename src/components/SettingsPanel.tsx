@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Settings } from 'lucide-react'
-import { SFX } from '../audio/sfx'
 import { useGame } from '../hooks/useGame'
 import type { PrefKey } from '../game/store'
 
 const ROWS: { k: PrefKey; label: string }[] = [
-  { k: 'sfx', label: 'Sound' },
+  { k: 'sfx', label: 'Game sounds' },
   { k: 'music', label: 'Music' },
-  { k: 'crowd', label: 'Crowd cheers' },
-  { k: 'guide', label: 'Guide light' },
+  { k: 'guide', label: 'Hint glow' },
 ]
 
-/** Gear button (top right) with the sound / music / crowd / guide switches. */
+/** Gear button (top left) with the sound, music and guide-light switches. */
 export function SettingsPanel() {
   const g = useGame()
   const [open, setOpen] = useState(false)
@@ -51,7 +49,6 @@ export function SettingsPanel() {
         title="Settings"
         onClick={e => {
           e.stopPropagation()
-          SFX.pop()
           setOpen(o => !o)
         }}
       >

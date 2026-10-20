@@ -1,7 +1,13 @@
 export const MAXCALL = 36
-export const PER = 3
+/** Numbers per draw: one down each of the six pipes. */
+export const PER = 6
 export const PRICE = 20
-export const BUY_SECS = 30
+/** Instant play: card prices a player can tap to get four cards at that price. */
+export const QUICK_PRICES = [10, 20, 50, 100]
+export const QUICK_CARDS = 4
+export const BUY_SECS = 15
+/** Pause after the last ball before the next round's card picking starts. */
+export const END_SECS = 2
 export const START_POINTS = 2450
 
 export interface Tier {

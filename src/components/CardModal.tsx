@@ -14,7 +14,7 @@ function CardFace({ card }: { card: Card }) {
         </div>
       ))}
       {card.flat.map((v, i) => (
-        <div key={i} className={'c' + (v === 0 ? ' f' : '') + (g.hot.has(v) ? ' hot' : '')}>
+        <div key={i} className={'c' + (v === 0 ? ' f' : '') + (g.modal.hot.has(v) ? ' hot' : '')}>
           {v === 0 ? '★' : v}
         </div>
       ))}
@@ -25,7 +25,7 @@ function CardFace({ card }: { card: Card }) {
 /** Card picker: a 3D carousel of ten priced cards, up to four can be bought. */
 export function CardModal() {
   const g = useGame()
-  const { open, pool, picked, idx, openKey } = g.modal
+  const { open, pool, picked, idx, openKey, forNext, hot, quick } = g.modal
   const car = useRef<HTMLDivElement>(null)
   const touchX = useRef(0)
 
@@ -106,20 +106,26 @@ export function CardModal() {
     <div className={'modal' + (open ? ' open' : '')} role="dialog" aria-modal="true" aria-label="Pick your cards">
       <div className="demo">DEMO MODE</div>
       <div className="mh">
-        <div className="mring" style={{ background: `conic-gradient(var(--gold) ${(g.secs / BUY_SECS) * 360}deg,var(--line) 0)` }}>
-          <div>{g.secs}</div>
+        <div className="mring" style={{ background: `conic-gradient(var(--gold) ${forNext ? 360 : (g.secs / BUY_SECS) * 360}deg,var(--line) 0)` }}>
+          <div style={forNext ? { fontSize: '.62em' } : undefined}>{forNext ? 'NEXT' : g.secs}</div>
         </div>
         <div>
-          <h2>Pick your cards</h2>
-          <small>Swipe · take up to 4</small>
+          <h2>{quick ? `Your ${pool.length} cards · KSh ${quick} each` : forNext ? 'Pick cards for the next round' : 'Pick your cards'}</h2>
+          <small>
+            {quick
+              ? `Swipe to look · then confirm${forNext ? ' · they join the next round' : ''}`
+              : forNext
+                ? 'They join when this round ends · take up to 4'
+                : 'Swipe · take up to 4'}
+          </small>
         </div>
       </div>
       <div className="hotrow">
         <span className="hl">
           <Flame aria-hidden="true" />
-          Hot numbers this round
+          {forNext ? 'Hot numbers next round' : 'Hot numbers this round'}
         </span>
-        {[...g.hot]
+        {[...hot]
           .sort((a, b) => a - b)
           .map(h => (
             <i key={h} style={{ '--c': colorOf(h) } as React.CSSProperties}>
@@ -172,8 +178,8 @@ export function CardModal() {
         <button className="ghost" aria-label="Previous card" onClick={() => g.go(-1)}>
           ‹
         </button>
-        <button id="takebtn" onClick={() => g.take()}>
-          {cur && (picked.has(idx) ? 'Remove this card' : 'Take this card · KSh ' + cur.price)}
+        <button id="takebtn" disabled={!!quick} onClick={() => g.take()}>
+          {quick ? `Your ${pool.length} cards` : cur && (picked.has(idx) ? 'Remove this card' : 'Take this card · KSh ' + cur.price)}
         </button>
         <button className="ghost" aria-label="Next card" onClick={() => g.go(1)}>
           ›
@@ -188,10 +194,10 @@ export function CardModal() {
       </div>
       <div className="macts">
         <button className="ghost" onClick={() => g.closeModal()}>
-          Close
+          {quick ? 'Cancel' : 'Close'}
         </button>
-        <button id="mbuy" disabled={!n || tot > g.pts || g.phase !== 'buy'} onClick={() => g.buy()}>
-          {n ? `Buy ${n} · KSh ${tot}` : 'Pick a card'}
+        <button id="mbuy" disabled={!n || tot > g.pts || !g.canPick} onClick={() => g.buy()}>
+          {quick ? `Confirm · KSh ${tot}` : n ? `Buy ${n} · KSh ${tot}` : 'Pick a card'}
         </button>
       </div>
     </div>

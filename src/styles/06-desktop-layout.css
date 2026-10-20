@@ -3,7 +3,7 @@
  .arena{aspect-ratio:1600/901;display:block;max-width:1600px;background:var(--stage) center/100% 100%;container-type:inline-size;--u:calc(100cqw/1600);font-size:calc(14*var(--u));overflow:hidden}
  .arena>*{position:absolute;margin:0}
  .hero{display:contents}
- .gobj{left:32%;top:7.2%;width:36%}
+ .gobj{left:29%;top:3.4%;width:42%}
  .hero .tray{position:absolute;font-size:calc(14*var(--u));left:41%;width:18%;top:59.7%;height:8.2%}
  .tb{width:calc(74*var(--u));height:calc(74*var(--u))}
  .mb,.nextbox,.ctrl,.cover{display:none}.dk{display:flex}
@@ -12,6 +12,6 @@
  .chatp{height:auto}.tkp .tickets{flex-wrap:nowrap}.tkp .tk{flex:1}
  .banner{font-size:calc(17*var(--u));border-radius:99px}
  .balls{font-size:calc(14*var(--u))}.tk .grid5{font-size:calc(14*var(--u))}
- .logo{left:1.250%;top:1.332%;width:16.875%;height:7.769%}.potbar{left:19.375%;top:1.776%;width:79.375%;height:6.881%}.leftp{left:1.250%;top:11.099%;width:17.500%;height:59.489%}.calledp{left:80.000%;top:11.099%;width:18.750%;height:21.088%}.chatp{left:80.000%;top:33.074%;width:18.750%;height:30.189%}.winp{left:80.000%;top:64.151%;width:18.750%;height:34.628%}.tkp{left:1.250%;top:73.474%;width:77.500%;height:25.305%}.banner{left:35.000%;top:73.4%;width:30.000%;height:3.774%}
+ .logo{left:1.250%;top:1.332%;width:16.875%;height:7.769%}.potbar{left:19.375%;top:1.776%;width:79.375%;height:6.881%}.leftp{left:1.250%;top:11.099%;width:17.500%;height:59.489%}.calledp{left:80.000%;top:11.099%;width:18.750%;height:21.088%}.chatp{left:80.000%;top:33.074%;width:18.750%;height:30.189%}.winp{left:80.000%;top:64.151%;width:18.750%;height:34.628%}.tkp{left:1.250%;top:73.474%;width:77.500%;height:25.305%}.banner{left:35.000%;top:82%;width:30.000%;height:3.774%}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}

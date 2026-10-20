@@ -35,8 +35,10 @@ export function TicketsPanel() {
         ))}
       </div>
       <div className={'frame' + (g.myBought ? ' bought' : '')}>
-        <div className="badge" hidden={!g.myBought}>
-          ✓ {g.mine.length} CARD{g.mine.length > 1 ? 'S' : ''} BOUGHT · KSh {total}
+        <div className="badge" hidden={!g.myBought && !g.queued.length}>
+          {g.myBought && `✓ ${g.mine.length} CARD${g.mine.length > 1 ? 'S' : ''} BOUGHT · KSh ${total}`}
+          {g.myBought && g.queued.length > 0 && ' · '}
+          {g.queued.length > 0 && `${g.queued.length} SAVED FOR NEXT ROUND`}
         </div>
         <div className="tickets">
           {g.mine.map((t, i) => {
@@ -62,7 +64,15 @@ export function TicketsPanel() {
               </div>
             )
           })}
-          {!g.mine.length && <div className="empty">No cards yet. Pick your cards during the buying phase.</div>}
+          {!g.mine.length && (
+            <div className="empty">
+              {g.phase === 'buy'
+                ? 'No cards yet. Pick your cards before the draw starts.'
+                : g.queued.length
+                  ? `Your ${g.queued.length} card${g.queued.length > 1 ? 's are' : ' is'} saved. ${g.queued.length > 1 ? 'They join' : 'It joins'} the next round when this one ends.`
+                  : 'This round has started. You can pick cards now for the next round.'}
+            </div>
+          )}
         </div>
         <div className="start" hidden={!(g.phase === 'buy' && g.myBought)}>
           <span>GAME STARTS IN</span>

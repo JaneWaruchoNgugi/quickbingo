@@ -1,3 +1,5 @@
+import { QUICK_CARDS, QUICK_PRICES } from '../game/constants'
+import type { Game } from '../game/store'
 import { useGame } from '../hooks/useGame'
 
 const ringBg = (deg: number) => `conic-gradient(var(--gold) ${deg}deg,var(--line) 0)`
@@ -24,7 +26,38 @@ export function LeftPanel() {
       <div className="row">
         Total Participants<b>{g.participants}</b>
       </div>
+      <QuickPick />
       <PickButton />
+    </div>
+  )
+}
+
+function pickLabel(g: Game) {
+  if (g.phase === 'buy') return g.myBought ? 'Cards bought' : 'Pick your cards'
+  return g.queued.length ? 'Saved for next round ✓' : 'Pick cards for next round'
+}
+
+/** Instant play: tap a price to get four cards at that price, ready to confirm. */
+export function QuickPick({ className }: { className?: string }) {
+  const g = useGame()
+  return (
+    <div className={'qpick' + (className ? ' ' + className : '')}>
+      <span className="qlabel">
+        {g.phase === 'buy' ? 'Instant play' : 'Next round'} · {QUICK_CARDS} cards · KSh each
+      </span>
+      <div className="qchips">
+        {QUICK_PRICES.map(p => (
+          <button
+            key={p}
+            type="button"
+            className="qchip"
+            disabled={!g.canPick || p * QUICK_CARDS > g.pts}
+            onClick={() => g.openQuick(p)}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -32,8 +65,8 @@ export function LeftPanel() {
 export function PickButton({ className }: { className?: string }) {
   const g = useGame()
   return (
-    <button className={className} disabled={g.phase !== 'buy' || g.myBought || g.pts < 10} onClick={() => g.openModal()}>
-      {g.myBought ? 'Cards bought' : 'Pick your cards'}
+    <button className={className} disabled={!g.canPick || g.pts < 10} onClick={() => g.openModal()}>
+      {pickLabel(g)}
     </button>
   )
 }

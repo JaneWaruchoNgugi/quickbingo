@@ -1,5 +1,12 @@
-/** Decorative SVG layers of the globe: gold ribbons around the sphere, exit pipes and the three bays. */
-const VIEWBOX = '0 0 1189 1323'
+/** Decorative SVG layers of the globe: gold ribbons around the sphere, six exit pipes and their holes. */
+export const VB_W = 1189
+export const VB_H = 1323
+const VIEWBOX = `0 0 ${VB_W} ${VB_H}`
+
+/** The glass sphere in viewBox units; CSS in 02-panels.css places the canvas and glass to match. */
+export const GLOBE = { cx: 593, cy: 470, r: 400 }
+/** Ribbons were drawn for a sphere of radius 345 centred at (593, 490). */
+const RIB_FIT = `translate(${GLOBE.cx} ${GLOBE.cy}) scale(${GLOBE.r / 345}) translate(-593 -490)`
 
 const BACK = [
   { rot: -16, d: 'M188,455 A405,125 0 0 1 998,455' },
@@ -12,7 +19,7 @@ const FRONT = [
 
 function Ribbon({ rot, d }: { rot: number; d: string }) {
   return (
-    <g transform={`rotate(${rot} 593 490)`} fill="none" strokeLinecap="round">
+    <g transform={`${RIB_FIT} rotate(${rot} 593 490)`} fill="none" strokeLinecap="round">
       <path d={d} stroke="#ff4df0" strokeWidth="40" opacity=".38" filter="url(#bl)" />
       <path d={d} stroke="#2a0b57" strokeWidth="30" />
       <path d={d} stroke="url(#gold)" strokeWidth="22" />
@@ -31,6 +38,14 @@ export function BackRibbons() {
           <stop offset=".35" stopColor="#ffe9a0" />
           <stop offset=".6" stopColor="#ffb02e" />
           <stop offset="1" stopColor="#a85f06" />
+        </linearGradient>
+        <linearGradient id="goldC" x1="0" x2="1">
+          <stop offset="0" stopColor="#6b3a04" />
+          <stop offset=".18" stopColor="#c9850f" />
+          <stop offset=".4" stopColor="#fff1b8" />
+          <stop offset=".62" stopColor="#f0a828" />
+          <stop offset=".88" stopColor="#8a4f06" />
+          <stop offset="1" stopColor="#4a2702" />
         </linearGradient>
         <radialGradient id="bayG" cx=".5" cy=".4" r=".7">
           <stop offset="0" stopColor="#2b1058" />
@@ -61,43 +76,78 @@ export function FrontRibbons() {
   )
 }
 
-/** The three curved exit pipes; the balls follow the paths with ids pp0..pp2. */
-const PIPES = [
-  'M445,805 C420,880 330,930 360,990 C375,1030 430,1040 436,1075',
-  'M593,835 L593,1070',
-  'M741,805 C766,880 856,930 826,990 C811,1030 756,1040 752,1075',
-]
+/** Six pipes fan out from the bottom of the sphere and drop into a row of holes on the podium. */
+const HOLE_Y = 1130
+const HOLE_R = 70
+const COLLAR_Y = 1046
+const HOLE_COLORS = ['#ff3df0', '#ff2d55', '#ffc21a', '#2dff7a', '#36d6ff', '#a64dff']
+
+export const PIPES = HOLE_COLORS.map((color, i) => {
+  const dx = (i - 2.5) * 116
+  const xt = GLOBE.cx + dx
+  const yt = 800 - 60 * (dx / 290) ** 2
+  const xb = GLOBE.cx + (i - 2.5) * 165
+  const h = COLLAR_Y - yt
+  const c1 = { x: xt + dx * 0.22, y: yt + h * 0.42 }
+  const tube = `M${xt},${yt} C${c1.x},${c1.y} ${xb},${COLLAR_Y - h * 0.5} ${xb},${HOLE_Y - HOLE_R + 6}`
+  return {
+    color,
+    tube,
+    /** the path a ball rides: the tube plus a short drop into the hole */
+    ride: `${tube} L${xb},${HOLE_Y - 24}`,
+    top: { x: xt, y: yt, tilt: (Math.atan2(c1.x - xt, c1.y - yt) * 180) / Math.PI },
+    hole: { x: xb, y: HOLE_Y },
+  }
+})
+
+function Collar({ x, y, tilt = 0, w = 88 }: { x: number; y: number; tilt?: number; w?: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${-tilt})`}>
+      <rect x={-w / 2 - 4} y="-30" width={w + 8} height="20" rx="7" fill="url(#goldC)" />
+      <rect x={-w / 2} y="-12" width={w} height="40" rx="6" fill="url(#goldC)" />
+      <rect x={-w / 2} y="2" width={w} height="6" fill="#36d6ff" opacity=".9" />
+      <rect x={-w / 2} y="2" width={w} height="6" fill="#7df9ff" filter="url(#bl2)" />
+      <rect x={-w / 2} y="-12" width={w} height="3" fill="#4a2702" opacity=".55" />
+    </g>
+  )
+}
 
 export function PipeLayers() {
   return (
     <svg className="pipes pipes-b" viewBox={VIEWBOX} aria-hidden="true">
-      {PIPES.map((d, i) => (
-        <g key={i}>
-          <path id={'pp' + i} d={d} fill="none" stroke="#ff7bf5" strokeWidth="116" strokeLinecap="round" opacity=".55" filter="url(#bl2)" />
-          <path d={d} fill="none" stroke="#150636" strokeWidth="104" strokeLinecap="round" opacity=".62" />
-          <path d={d} fill="none" stroke="#3ad7ff" strokeWidth="3" strokeLinecap="round" opacity=".8" transform="translate(-48 0)" />
-          <path d={d} fill="none" stroke="#3ad7ff" strokeWidth="3" strokeLinecap="round" opacity=".8" transform="translate(48 0)" />
+      {PIPES.map(({ tube, ride }, i) => (
+        <g key={i} fill="none" strokeLinecap="round">
+          <path id={'pp' + i} d={ride} stroke="none" />
+          <path d={tube} stroke="#36d6ff" strokeWidth="88" opacity=".26" filter="url(#bl)" />
+          <path d={tube} stroke="#c8f6ff" strokeWidth="70" opacity=".55" />
+          <path d={tube} stroke="#14236e" strokeWidth="62" opacity=".78" />
+          <path d={tube} stroke="#36d6ff" strokeWidth="28" opacity=".4" filter="url(#bl2)" />
+          <path d={tube} stroke="#7df9ff" strokeWidth="9" opacity=".85" />
+          <path className="flow" d={tube} stroke="#fff" strokeWidth="5" strokeDasharray="34 260" opacity=".9" />
         </g>
       ))}
     </svg>
   )
 }
 
-const BAYS = [
-  { cx: 436, color: '#ff3d6e' },
-  { cx: 594, color: '#36d6ff' },
-  { cx: 752, color: '#2dff7a' },
-]
-
+/** Front layer, above the riding balls: glass sheen on the tubes, gold collars and the holes. */
 export function PipeBays() {
   return (
     <svg className="pipes pipes-f" viewBox={VIEWBOX} aria-hidden="true">
-      {BAYS.map(({ cx, color }) => (
-        <g key={cx}>
-          <circle cx={cx} cy="1105" r="84" fill="none" stroke={color} strokeWidth="16" opacity=".6" filter="url(#bl2)" />
-          <circle cx={cx} cy="1105" r="86" fill="url(#bayG)" stroke="url(#gold)" strokeWidth="13" />
-          <circle cx={cx} cy="1105" r="70" fill="none" stroke={color} strokeWidth="5" />
-          <circle cx={cx} cy="1105" r="95" fill="none" stroke="#ffffff55" strokeWidth="2" />
+      {PIPES.map(({ tube, top, hole, color }, i) => (
+        <g key={i}>
+          <path d={tube} fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" opacity=".5" transform="translate(-19 0)" />
+          <path d={tube} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity=".3" transform="translate(20 0)" />
+          <Collar x={top.x} y={top.y} tilt={top.tilt} />
+          <rect x={hole.x - 52} y={COLLAR_Y} width="104" height={hole.y - COLLAR_Y} fill="url(#goldC)" />
+          <Collar x={hole.x} y={COLLAR_Y} w={92} />
+          <circle cx={hole.x + 7} cy={hole.y + 6} r={HOLE_R + 6} fill="#5a3205" />
+          <circle cx={hole.x} cy={hole.y} r={HOLE_R + 4} fill="none" stroke={color} strokeWidth="16" opacity=".5" filter="url(#bl2)" />
+          <circle cx={hole.x} cy={hole.y} r={HOLE_R} fill="url(#bayG)" stroke="url(#gold)" strokeWidth="15" />
+          <circle cx={hole.x} cy={hole.y} r={HOLE_R - 17} fill={color} opacity=".14" />
+          <circle cx={hole.x} cy={hole.y} r={HOLE_R - 16} fill="none" stroke={color} strokeWidth="10" opacity=".7" filter="url(#bl2)" />
+          <circle cx={hole.x} cy={hole.y} r={HOLE_R - 16} fill="none" stroke={color} strokeWidth="5" />
+          <circle cx={hole.x} cy={hole.y} r={HOLE_R + 8} fill="none" stroke="#ffffff55" strokeWidth="2" />
         </g>
       ))}
     </svg>

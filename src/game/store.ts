@@ -1,7 +1,8 @@
 import { SFX } from '../audio/sfx'
-import { MachineState } from '../engine/machine'
+import { MachineState, UNIT_VB } from '../engine/machine'
+import { GLOBE, PIPES } from '../components/PipeArt'
 import {
-  ACC, BOT_NAMES, BUY_SECS, CHAT_LINES, CHATTERS, MAXCALL, PER, PRICE, START_POINTS, TIERS,
+  ACC, QUICK_CARDS, BOT_NAMES, BUY_SECS, END_SECS, CHAT_LINES, CHATTERS, MAXCALL, PER, PRICE, START_POINTS, TIERS,
   colorOf, fmt, rnd,
 } from './constants'
 import { bestRow, buildPool, drawNum, lines, LINE_IDX, makeGrid, pickHot, type Card, type Grid } from './cards'
@@ -12,7 +13,7 @@ export interface ChatMsg { id: number; who: string; msg: string }
 export interface WinRow { id: number; label: string; x: number }
 export interface Toast { id: number; txt: string; cls: string }
 export interface Bot { name: string; ts: Grid[] }
-export interface Prefs { sfx: boolean; music: boolean; crowd: boolean; guide: boolean }
+export interface Prefs { sfx: boolean; music: boolean; guide: boolean }
 export type PrefKey = keyof Prefs
 
 export interface ConfettiPiece {
@@ -37,6 +38,14 @@ export interface BingoView {
   win: number
   chip: string
   next: string
+  /** last numbers called, shown as balls floating around the card */
+  balls: number[]
+  /** which of the player's cards won (1-based), out of how many, and its price */
+  card: number
+  cards: number
+  price: number
+  /** numbers called so far, e.g. "30 / 36" */
+  calls: string
   stars: number
   starsOn: number
   lvl: number
@@ -50,10 +59,12 @@ export interface BingoView {
 /** Hooks the globe component registers so the game can run the pipe/spout animations. */
 export interface Effects {
   pipeRide(i: number, n: number, done: () => void): void
-  fireSpouts(): void
+  fireSpouts(only?: number): void
 }
 
 const XP_PER_LEVEL = 150
+/** ms between balls leaving the globe, so each one can be followed down its pipe */
+const PICK_GAP = 320
 
 function loadPrefs(): Prefs {
   let raw: Partial<Prefs> = {}
@@ -62,7 +73,7 @@ function loadPrefs(): Prefs {
   } catch {
     raw = {}
   }
-  return { sfx: raw.sfx !== false, music: raw.music !== false, crowd: raw.crowd !== false, guide: raw.guide !== false }
+  return { sfx: raw.sfx !== false, music: raw.music !== false, guide: raw.guide !== false }
 }
 
 /**
@@ -91,8 +102,12 @@ export class Game {
   roundWin = 0
   batchWin = 0
   hot = new Set<number>()
+  /** hot numbers of the next round, fixed early so cards can be bought for it during a draw */
+  nextHot = pickHot()
+  /** cards bought during a draw or after it, waiting for the next round */
+  queued: Card[] = []
   fresh = new Set<number>()
-  tray: (number | null)[] = [null, null, null]
+  tray: (number | null)[] = Array(PER).fill(null)
   swirl = false
   winners: WinRow[] = []
   chatLog: ChatMsg[] = []
@@ -101,7 +116,7 @@ export class Game {
   xp = 0
   prefs: Prefs = loadPrefs()
   bingo: BingoView | null = null
-  modal = { open: false, pool: [] as Card[], picked: new Set<number>(), idx: 0, openKey: 0 }
+  modal = { open: false, pool: [] as Card[], picked: new Set<number>(), idx: 0, openKey: 0, forNext: false, hot: new Set<number>(), quick: 0 }
 
   // ---- machinery ----
   readonly machine = new MachineState()
@@ -136,18 +151,25 @@ export class Game {
     const sold = this.bots.reduce((a, b) => a + b.ts.length, 0) + this.mine.length
     return Math.max(0, 40 - Math.floor(sold / 2.5))
   }
+  /** The player has cards in a round that is still running: picking is hidden and the cards get the space. */
+  get playing() {
+    return this.mine.length > 0 && this.phase !== 'end'
+  }
+  /** Cards can be bought for this round while it is buying, otherwise for the next round. */
+  get canPick() {
+    return this.phase === 'buy' ? !this.myBought : !this.queued.length
+  }
   get calledSet() {
     return new Set(this.called)
   }
 
-  /** Boot: apply saved settings, start the first round and the ambient timers. Safe to call twice. */
+  /** Boot: apply saved sound settings, start the first round and the ambient timers. Safe to call twice. */
   start() {
     if (this.started) return
     this.started = true
     SFX.bindDrawing(() => this.phase === 'draw')
-    ;(Object.keys(this.prefs) as PrefKey[]).forEach(k => {
-      if (k !== 'guide') SFX.set(k, this.prefs[k])
-    })
+    SFX.set('sfx', this.prefs.sfx)
+    SFX.set('music', this.prefs.music)
     this.say('QueenBingo', 'This looks amazing!')
     this.say('LuckyStar', 'Good luck everyone!')
     this.startRound()
@@ -170,11 +192,11 @@ export class Game {
   // ---- rounds ----
   private tick = () => {
     this.secs--
-    if (this.phase === 'buy' && this.secs > 0 && this.secs <= 5) SFX.tick(this.secs)
     this.startN = Math.max(this.secs, 0)
     this.startDeg = (this.secs / BUY_SECS) * 360
     this.timerText = fmt(this.secs)
     this.ringDeg = (this.secs / BUY_SECS) * 360
+    if (this.phase === 'buy' && this.secs > 0 && this.secs <= 5) SFX.tick(this.secs)
     if (this.secs <= 0) {
       clearInterval(this.timer)
       this.startDraw()
@@ -183,18 +205,20 @@ export class Game {
 
   startRound() {
     this.wasNear = false
-    this.hot = pickHot()
+    this.hot = this.nextHot
+    this.nextHot = pickHot()
     this.phase = 'buy'
     this.secs = BUY_SECS
     this.called = []
-    this.mine = []
+    this.mine = this.queued
+    this.queued = []
     this.won = {}
-    this.myBought = false
+    this.myBought = this.mine.length > 0
     this.tab = 0
     this.prevLn = []
     this.roundWin = 0
     this.batchWin = 0
-    this.tray = [null, null, null]
+    this.tray = Array(PER).fill(null)
     this.machine.reset()
     this.bots = Array.from({ length: 23 }, (_, i) => ({
       name: BOT_NAMES[i % 12] + (i >= 12 ? i : ''),
@@ -213,13 +237,14 @@ export class Game {
   }
 
   private startDraw() {
-    SFX.go()
     this.phase = 'draw'
     this.phaseLabel = 'Live Draw'
     this.tl = 'drawing now'
-    this.closeModal()
+    // an open card picker stays open: whatever is bought now plays in the next round
+    if (this.modal.open) this.modal = { ...this.modal, forNext: true, hot: this.nextHot }
     this.render()
-    this.say('Host', 'Draw is live. 3 numbers per draw.')
+    SFX.go()
+    this.say('Host', `Draw is live. ${PER} numbers per draw.`)
     this.next()
   }
 
@@ -245,18 +270,18 @@ export class Game {
   }
 
   private endRound() {
-    SFX.end()
-    setTimeout(() => {
-      if (this.mine.length) this.roundWin > 0 ? SFX.cheer(true) : SFX.aww()
-    }, 800)
     this.phase = 'end'
     this.phaseLabel = 'Round Over'
     this.tl = 'next round'
-    let s = 8
+    let s = END_SECS
     this.banner = this.won[12]
       ? this.won[12] === 'You' ? 'BINGO! You hit the Full House!' : this.won[12] + ' got the Full House.'
       : 'All 36 numbers called. Round over.'
     this.render()
+    SFX.end()
+    setTimeout(() => {
+      if (this.mine.length) this.roundWin > 0 ? SFX.cheer(true) : SFX.aww()
+    }, 800)
     this.timer = window.setInterval(() => {
       s--
       this.timerText = fmt(s)
@@ -275,13 +300,12 @@ export class Game {
     const m = this.machine
     m.busy = true
     this.swirl = true
-    SFX.whirl()
     const got: number[] = []
-    this.banner = 'Drawing 3 numbers…'
+    this.banner = `Drawing ${PER} numbers…`
+    SFX.whirl()
     while (got.length < PER) got.push(drawNum(new Set([...this.called, ...got]), this.hot))
-    this.tray = [null, null, null]
+    this.tray = Array(PER).fill(null)
     this.emit()
-    let arrived = 0
 
     const spit = () => {
       if (this.phase !== 'draw') {
@@ -290,13 +314,10 @@ export class Game {
         return
       }
       setTimeout(() => {
-        got.forEach((n, i) => {
+        got.forEach(n => {
           this.called.push(n)
           this.fresh.add(n)
-          SFX.land(n, i)
-          if (this.mine.some(tk => tk.flat.includes(n))) setTimeout(SFX.hit, 350)
           m.remove(n)
-          this.tray[i] = n
         })
         this.batchWin = 0
         this.check()
@@ -320,22 +341,32 @@ export class Game {
         m.busy = false
         return
       }
-      got.forEach((n, i) =>
-        m.pick(
-          n,
-          () => {
-            if (++arrived < PER) return
-            SFX.slide()
-            let ride = 0
-            got.forEach((mm, k) =>
-              this.fx?.pipeRide(k, mm, () => {
+      // one ball per pipe, left to right, each one sliding down as soon as it is sucked in
+      let ride = 0
+      got.forEach((n, i) => {
+        const mouth = PIPES[i].top
+        setTimeout(() => {
+          if (this.phase !== 'draw') {
+            got.forEach(x => m.remove(x))
+            m.busy = false
+            return
+          }
+          m.pick(
+            n,
+            () => {
+              this.fx?.pipeRide(i, n, () => {
+                this.tray[i] = n
+                this.emit()
+                SFX.land(n, i)
+                if (this.mine.some(tk => tk.flat.includes(n))) SFX.hit()
                 if (++ride === PER) spit()
-              }),
-            )
-          },
-          (i - 1) * 142,
-        ),
-      )
+              })
+            },
+            (mouth.x - GLOBE.cx) / UNIT_VB,
+            (mouth.y - GLOBE.cy) / UNIT_VB,
+          )
+        }, i * PICK_GAP)
+      })
     }, 900)
   }
 
@@ -356,14 +387,14 @@ export class Game {
     const near = this.mine.some(t => bestRow(t.rows, set) === 4)
     if (hits >= 2) {
       setTimeout(() => {
-        SFX.combo(hits)
         this.toast('COMBO ×' + hits + '!', 'combo')
+        SFX.combo(hits)
       }, 450)
     }
     if (near && !this.wasNear) {
       setTimeout(() => {
-        SFX.near()
         this.toast('SO CLOSE!', 'near')
+        SFX.near()
         this.shakeKey++
         this.emit()
       }, hits >= 2 ? 1300 : 500)
@@ -417,8 +448,6 @@ export class Game {
 
   // ---- win popup ----
   private showBingo(card: number, win: number) {
-    SFX.bingo()
-    setTimeout(() => SFX.cheer(win > 0), 500)
     const tk = this.mine[card - 1]
     const set = this.calledSet
     const nl = tk ? lines(tk.rows, set) : 1
@@ -426,7 +455,7 @@ export class Game {
     const stars = full ? 3 : nl >= 3 ? 3 : nl >= 2 ? 2 : 1
     const key = ++this.uid
     const accent = ACC[Math.min(nl, 4) >= 4 && !full ? 4 : full ? 12 : nl] || '#ffd24a'
-    const title = full ? 'FULL HOUSE!' : nl === 1 ? 'LINE!' : nl === 2 ? 'DOUBLE LINE!' : nl === 3 ? 'TRIPLE LINE!' : nl + ' LINES!'
+    const title = full ? 'FULL HOUSE!' : nl === 1 ? 'LINE WIN!' : nl === 2 ? 'DOUBLE LINE!' : nl === 3 ? 'TRIPLE LINE!' : nl + ' LINES!'
 
     const mini: BingoView['mini'] = []
     if (tk) {
@@ -478,7 +507,7 @@ export class Game {
       sub: 'CARD ' + card + (tk ? ' · KSh ' + tk.price + ' CARD' : ''),
       mini,
       none: !(win > 0),
-      plabel: win > 0 ? 'YOU WON' : 'LINE COMPLETE',
+      plabel: win > 0 ? (full ? 'FULL HOUSE WIN' : nl > 1 ? nl + ' LINES WIN' : 'LINE WIN') : 'LINE COMPLETE',
       win,
       chip: win > 0 && cur ? '×' + cur.x + ' · ' + cur.l.toUpperCase() : '',
       next: next ? 'Next: ' + next.l + ' pays KSh ' + Math.round(pr * next.x) : 'Keep going!',
@@ -489,6 +518,11 @@ export class Game {
       xpFrom: oldF * 100,
       xpTo: ((this.xp % XP_PER_LEVEL) / XP_PER_LEVEL) * 100,
       tier: this.called.length + ' OF ' + MAXCALL + ' NUMBERS CALLED',
+      calls: this.called.length + ' / ' + MAXCALL,
+      balls: this.called.slice(-6),
+      card,
+      cards: this.mine.length,
+      price: tk ? tk.price : 0,
       confetti,
     }
     for (let i = 0; i < stars; i++)
@@ -498,6 +532,8 @@ export class Game {
         SFX.star(i)
         this.emit()
       }, 900 + i * 350)
+    SFX.bingo()
+    setTimeout(() => SFX.cheer(win > 0), 500)
     clearTimeout(this.bingoTimer)
     this.bingoTimer = window.setTimeout(() => this.hideBingo(), 6500)
   }
@@ -521,9 +557,32 @@ export class Game {
   }
 
   openModal() {
-    if (this.phase !== 'buy' || this.myBought) return
-    this.modal = { open: true, pool: buildPool(this.hot), picked: new Set(), idx: 0, openKey: ++this.uid }
+    if (!this.canPick) return
+    const forNext = this.phase !== 'buy'
+    const hot = forNext ? this.nextHot : this.hot
+    this.modal = { open: true, pool: buildPool(hot), picked: new Set(), idx: 0, openKey: ++this.uid, forNext, hot, quick: 0 }
     SFX.shimmer()
+    this.emit()
+  }
+
+  /** Instant play: deal four cards at `price` each and open them, already selected, for confirmation. */
+  openQuick(price: number) {
+    if (!this.canPick || price * QUICK_CARDS > this.pts) return
+    const forNext = this.phase !== 'buy'
+    const hot = forNext ? this.nextHot : this.hot
+    // every pool holds one card per price step, so each pool gives one card at this price
+    const pool = Array.from({ length: QUICK_CARDS }, () => buildPool(hot).find(c => c.price === price)!)
+    this.modal = {
+      open: true,
+      pool,
+      picked: new Set(pool.map((_, i) => i)),
+      idx: 0,
+      openKey: ++this.uid,
+      forNext,
+      hot,
+      quick: price,
+    }
+    SFX.deal()
     this.emit()
   }
 
@@ -534,8 +593,8 @@ export class Game {
   }
 
   go(d: number) {
-    SFX.swipe()
     this.modal.idx = this.mod(this.modal.idx + d)
+    SFX.swipe()
     this.emit()
   }
 
@@ -550,8 +609,9 @@ export class Game {
   /** "Take this card": toggles the current card and, when added, moves on to the next one. */
   take() {
     const m = this.modal
-    SFX.pop()
+    if (m.quick) return
     clearTimeout(this.advTimer)
+    SFX.pop()
     if (m.picked.has(m.idx)) {
       m.picked.delete(m.idx)
       this.emit()
@@ -571,14 +631,21 @@ export class Game {
 
   buy() {
     const m = this.modal
-    if (this.phase !== 'buy' || this.myBought || !m.picked.size) return
+    if (!this.canPick || !m.picked.size) return
     const n = m.picked.size
-    this.pts -= [...m.picked].reduce((a, i) => a + m.pool[i].price, 0)
-    this.mine = [...m.picked].map(i => m.pool[i])
-    this.myBought = true
+    const cards = [...m.picked].map(i => m.pool[i])
+    this.pts -= cards.reduce((a, c) => a + c.price, 0)
     SFX.coin()
+    const s = n > 1 ? 's' : ''
+    if (this.phase === 'buy') {
+      this.mine = cards
+      this.myBought = true
+      this.say('Host', `You bought ${n} card${s}`)
+    } else {
+      this.queued = cards
+      this.say('Host', `You bought ${n} card${s} for the next round. They join when this round ends.`)
+    }
     this.closeModal()
-    this.say('Host', 'You bought ' + n + ' card' + (n > 1 ? 's' : ''))
     this.render()
   }
 
@@ -587,12 +654,12 @@ export class Game {
     this.prefs = { ...this.prefs, [k]: v }
     if (k === 'guide') this.render()
     else SFX.set(k, v)
+    SFX.pop()
     try {
       localStorage.setItem('qbprefs', JSON.stringify(this.prefs))
     } catch {
       /* storage unavailable */
     }
-    SFX.pop()
     this.emit()
   }
 }

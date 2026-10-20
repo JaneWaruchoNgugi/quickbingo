@@ -21,9 +21,10 @@ src/
     cards.ts                 card generation, lines, hot numbers, weighted draw, card pricing
     store.ts                 Game class: rounds, draw sequence, prizes, card picker, win popup, settings
   engine/machine.ts          canvas physics + rendering of the 85 balls in the globe
-  audio/sfx.ts               Web Audio synth: music loop, effects, crowd
+  audio/sfx.ts               Web Audio engine: music loops, effects, crowd (clips with synth fallback)
+  audio/samples/             music, jackpot and recorded effects as .ogg + .m4a (see CREDITS.md)
   hooks/useGame.ts           subscribes components to the store
-  components/                PotBar, LeftPanel, Hero/Globe (+ PipeArt), CalledPanel, WinnersPanel,
+  components/                TopBar, LeftPanel, Hero/Globe (+ PipeArt), CalledPanel, WinnersPanel,
                              ChatPanel, TicketsPanel, CardModal, WinPopup, SettingsPanel, Banner
 ```
 
@@ -33,4 +34,4 @@ src/
 - Each round 3 numbers per letter are "hot" and drawn three times as often; cards that hold more
   hot numbers have a higher simulated line chance and cost more (KSh 10–100).
 - Payout = card price × tier: 1 line ×0.5, 2 lines ×1.2, 3 lines ×1.4, 4 lines ×1.6, full house ×1.8.
-- Settings (sound, music, crowd, guide light) are saved in `localStorage` (`qbprefs`).
+- Settings (sound, music, guide light) are saved in `localStorage` (`qbprefs`).
