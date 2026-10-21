@@ -6,7 +6,7 @@ import { Banner } from './components/Banner'
 import { CalledPanel } from './components/CalledPanel'
 import { CardModal } from './components/CardModal'
 import { ChatPanel } from './components/ChatPanel'
-import { Hero } from './components/Hero'
+import { Hero, MobilePick } from './components/Hero'
 import { LeftPanel, NextBox } from './components/LeftPanel'
 import { TopBar } from './components/TopBar'
 import { TicketsPanel } from './components/TicketsPanel'
@@ -36,6 +36,7 @@ export default function App() {
         <LeftPanel />
         <NextBox />
         <Hero />
+        <MobilePick />
         <Banner />
         <CalledPanel />
         <WinnersPanel />

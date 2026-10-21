@@ -9,7 +9,7 @@ export function ChatPanel() {
   useLayoutEffect(() => {
     const el = log.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [g.chatLog.length])
+  }, [g.chatLog[g.chatLog.length - 1]?.id])
 
   const submit = (e: FormEvent) => {
     e.preventDefault()

@@ -15,4 +15,4 @@
 #confetti i.shot.coin{width:16px;height:16px}#confetti i.shot.rnd{border-radius:50%}
 @keyframes shoot{0%{transform:translate(0,0) rotate(0);opacity:1}45%{transform:translate(var(--dx),var(--dy)) rotate(calc(var(--rot)*.5));opacity:1}100%{transform:translate(calc(var(--dx)*1.25),calc(var(--dy)*-.1 + 30vh)) rotate(var(--rot));opacity:0}}
 .spanel{top:66px!important;bottom:auto!important;right:12px!important}
-@media(max-width:899px){.hero.nextbuy .mbtn:not(:disabled){display:block;font-size:13px;padding:.6em 1.3em}}
+@media(max-width:899px){.arena.watching .mpick .mbtn:not(:disabled){font-size:13px;padding:.6em 1.3em}}

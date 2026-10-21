@@ -1,11 +1,11 @@
 import { SFX } from '../audio/sfx'
-import { MachineState, UNIT_VB } from '../engine/machine'
+import { MachineState, PICK_MS, UNIT_VB } from '../engine/machine'
 import { GLOBE, PIPES } from '../components/PipeArt'
 import {
   ACC, QUICK_CARDS, BOT_NAMES, BUY_SECS, END_SECS, CHAT_LINES, CHATTERS, MAXCALL, PER, PRICE, START_POINTS, TIERS,
-  colorOf, fmt, rnd,
+  LITE, colorOf, fmt, rnd,
 } from './constants'
-import { bestRow, buildPool, drawNum, lines, LINE_IDX, makeGrid, pickHot, type Card, type Grid } from './cards'
+import { bestRow, buildPool, drawNum, lineCells, lines, makeGrid, pickHot, type Card, type Grid } from './cards'
 
 export type Phase = 'buy' | 'draw' | 'end'
 
@@ -58,13 +58,17 @@ export interface BingoView {
 
 /** Hooks the globe component registers so the game can run the pipe/spout animations. */
 export interface Effects {
-  pipeRide(i: number, n: number, done: () => void): void
+  pipeRide(i: number, n: number, done: () => void, mine?: boolean): void
   fireSpouts(only?: number): void
 }
 
 const XP_PER_LEVEL = 150
 /** ms between balls leaving the globe, so each one can be followed down its pipe */
 const PICK_GAP = 320
+/** ms the finished six stay in the tray before the next draw spins up */
+const BATCH_GAP = 400
+/** ms the globe spins before the first ball of a draw is picked */
+const SPIN_UP = 450
 
 function loadPrefs(): Prefs {
   let raw: Partial<Prefs> = {}
@@ -186,6 +190,8 @@ export class Game {
 
   say(who: string, msg: string) {
     this.chatLog.push({ id: ++this.uid, who, msg })
+    // keep the chat short: an endless log slowly fills the page and memory
+    if (this.chatLog.length > 40) this.chatLog = this.chatLog.slice(-40)
     this.emit()
   }
 
@@ -243,9 +249,12 @@ export class Game {
     // an open card picker stays open: whatever is bought now plays in the next round
     if (this.modal.open) this.modal = { ...this.modal, forNext: true, hot: this.nextHot }
     this.render()
-    SFX.go()
+    // the machine starts on the riser's impact, so the fanfare doesn't land on top of the first ball
+    const lead = SFX.go()
     this.say('Host', `Draw is live. ${PER} numbers per draw.`)
-    this.next()
+    setTimeout(() => {
+      if (this.phase === 'draw') this.next()
+    }, lead * 1000)
   }
 
   private next() {
@@ -283,6 +292,8 @@ export class Game {
       if (this.mine.length) this.roundWin > 0 ? SFX.cheer(true) : SFX.aww()
     }, 800)
     this.timer = window.setInterval(() => {
+      // hold the finished round while the win popup is up, so the cards behind it still show the line
+      if (this.bingo) return
       s--
       this.timerText = fmt(s)
       if (s <= 0) {
@@ -302,9 +313,9 @@ export class Game {
     this.swirl = true
     const got: number[] = []
     this.banner = `Drawing ${PER} numbers…`
-    SFX.whirl()
+    // the rattle runs until the first ball is sucked into its pipe
+    SFX.whirl((SPIN_UP + PICK_MS) / 1000)
     while (got.length < PER) got.push(drawNum(new Set([...this.called, ...got]), this.hot))
-    this.tray = Array(PER).fill(null)
     this.emit()
 
     const spit = () => {
@@ -329,7 +340,7 @@ export class Game {
         this.engage(got)
         m.busy = false
         if (this.called.length >= MAXCALL || this.won[12]) this.endRound()
-        else setTimeout(() => this.callBatch(), 1100)
+        else setTimeout(() => this.callBatch(), BATCH_GAP)
         this.swirl = false
         this.emit()
       }, 0)
@@ -341,6 +352,9 @@ export class Game {
         m.busy = false
         return
       }
+      // the last six stay in the tray through the spin-up, then make room for the new ones
+      this.tray = Array(PER).fill(null)
+      this.emit()
       // one ball per pipe, left to right, each one sliding down as soon as it is sucked in
       let ride = 0
       got.forEach((n, i) => {
@@ -354,20 +368,25 @@ export class Game {
           m.pick(
             n,
             () => {
-              this.fx?.pipeRide(i, n, () => {
-                this.tray[i] = n
-                this.emit()
-                SFX.land(n, i)
-                if (this.mine.some(tk => tk.flat.includes(n))) SFX.hit()
-                if (++ride === PER) spit()
-              })
+              // the landing sounds are scheduled by the ride itself, timed to the ball
+              const mine = this.mine.some(tk => tk.flat.includes(n))
+              this.fx?.pipeRide(
+                i,
+                n,
+                () => {
+                  this.tray[i] = n
+                  this.emit()
+                  if (++ride === PER) spit()
+                },
+                mine,
+              )
             },
             (mouth.x - GLOBE.cx) / UNIT_VB,
             (mouth.y - GLOBE.cy) / UNIT_VB,
           )
         }, i * PICK_GAP)
       })
-    }, 900)
+    }, SPIN_UP)
   }
 
   private toast(txt: string, cls: string) {
@@ -443,7 +462,10 @@ export class Game {
       if (n > (this.prevLn[i] || 0) && hit < 0) hit = i
       this.prevLn[i] = n
     })
-    if (hit >= 0) this.showBingo(hit + 1, this.batchWin)
+    if (hit < 0) return
+    // a single other card on screen would hide the winning one: show the card that won
+    if (this.tab && this.tab !== hit + 1) this.tab = hit + 1
+    this.showBingo(hit + 1, this.batchWin)
   }
 
   // ---- win popup ----
@@ -459,10 +481,7 @@ export class Game {
 
     const mini: BingoView['mini'] = []
     if (tk) {
-      const hl = new Set<number>()
-      LINE_IDX.forEach(l => {
-        if (l.every(i => tk.flat[i] === 0 || set.has(tk.flat[i]))) l.forEach(i => hl.add(i))
-      })
+      const hl = lineCells(tk.flat, set)
       tk.flat.forEach((n, i) =>
         mini.push({
           cls: (n === 0 ? 'f' : set.has(n) ? 'm' : '') + (hl.has(i) ? ' w' : ''),
@@ -484,7 +503,7 @@ export class Game {
     const cols = ['#f6b93b', '#38bdf8', '#ef4444', '#a855f7', '#22c55e', '#ec4899', '#fde047']
     const confetti: ConfettiPiece[] = []
     for (let side = 0; side < 2; side++)
-      for (let i = 0; i < 34; i++) {
+      for (let i = 0; i < (LITE ? 12 : 34); i++) {
         const coin = i % 5 === 0
         const dir = side ? -1 : 1
         const sp = 0.4 + Math.random() * 0.8

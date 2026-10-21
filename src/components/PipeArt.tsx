@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 /** Decorative SVG layers of the globe: gold ribbons around the sphere, six exit pipes and their holes. */
 export const VB_W = 1189
 export const VB_H = 1323
@@ -17,64 +19,93 @@ const FRONT = [
   { rot: 13, d: 'M1023,585 A430,140 0 0 1 163,585' },
 ]
 
-function Ribbon({ rot, d }: { rot: number; d: string }) {
+/** A ribbon band; `glow` adds the blurred halo under it. */
+function Ribbon({ rot, d, glow = true }: { rot: number; d: string; glow?: boolean }) {
   return (
     <g transform={`${RIB_FIT} rotate(${rot} 593 490)`} fill="none" strokeLinecap="round">
-      <path d={d} stroke="#ff4df0" strokeWidth="40" opacity=".38" filter="url(#bl)" />
+      {glow && <path d={d} stroke="#ff4df0" strokeWidth="40" opacity=".38" filter="url(#bl)" />}
       <path d={d} stroke="#2a0b57" strokeWidth="30" />
       <path d={d} stroke="url(#gold)" strokeWidth="22" />
       <path d={d} stroke="#7df9ff" strokeWidth="7" />
+    </g>
+  )
+}
+
+function RibbonFlow({ rot, d }: { rot: number; d: string }) {
+  return (
+    <g transform={`${RIB_FIT} rotate(${rot} 593 490)`} fill="none" strokeLinecap="round">
       <path className="flow" d={d} stroke="#fff" strokeWidth="5" strokeDasharray="60 520" opacity=".9" />
     </g>
   )
 }
 
-export function BackRibbons() {
+/**
+ * The light running along the ribbons, in an SVG of its own: an animated dash in the same SVG as
+ * the blurred glows makes the browser redo the blurs every frame. The second band is drawn again
+ * (without its glow) between the two dashes, so the first dash still passes under it.
+ */
+function RibbonFlows({ set, cls }: { set: typeof BACK; cls: string }) {
   return (
-    <svg className="pipes rib rib-b" viewBox={VIEWBOX} aria-hidden="true">
-      <defs>
-        <linearGradient id="gold" x1="0" x2="1">
-          <stop offset="0" stopColor="#b8690b" />
-          <stop offset=".35" stopColor="#ffe9a0" />
-          <stop offset=".6" stopColor="#ffb02e" />
-          <stop offset="1" stopColor="#a85f06" />
-        </linearGradient>
-        <linearGradient id="goldC" x1="0" x2="1">
-          <stop offset="0" stopColor="#6b3a04" />
-          <stop offset=".18" stopColor="#c9850f" />
-          <stop offset=".4" stopColor="#fff1b8" />
-          <stop offset=".62" stopColor="#f0a828" />
-          <stop offset=".88" stopColor="#8a4f06" />
-          <stop offset="1" stopColor="#4a2702" />
-        </linearGradient>
-        <radialGradient id="bayG" cx=".5" cy=".4" r=".7">
-          <stop offset="0" stopColor="#2b1058" />
-          <stop offset=".7" stopColor="#0d0522" />
-          <stop offset="1" stopColor="#05010f" />
-        </radialGradient>
-        <filter id="bl" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="9" />
-        </filter>
-        <filter id="bl2">
-          <feGaussianBlur stdDeviation="3" />
-        </filter>
-      </defs>
-      {BACK.map(r => (
-        <Ribbon key={r.rot} {...r} />
-      ))}
+    <svg className={'pipes rib flows ' + cls} viewBox={VIEWBOX} aria-hidden="true">
+      <RibbonFlow {...set[0]} />
+      <Ribbon {...set[1]} glow={false} />
+      <RibbonFlow {...set[1]} />
     </svg>
   )
 }
 
-export function FrontRibbons() {
+export const BackRibbons = memo(function BackRibbons() {
   return (
-    <svg className="pipes rib rib-f" viewBox={VIEWBOX} aria-hidden="true">
-      {FRONT.map(r => (
-        <Ribbon key={r.rot} {...r} />
-      ))}
-    </svg>
+    <>
+      <svg className="pipes rib rib-b" viewBox={VIEWBOX} aria-hidden="true">
+        <defs>
+          <linearGradient id="gold" x1="0" x2="1">
+            <stop offset="0" stopColor="#b8690b" />
+            <stop offset=".35" stopColor="#ffe9a0" />
+            <stop offset=".6" stopColor="#ffb02e" />
+            <stop offset="1" stopColor="#a85f06" />
+          </linearGradient>
+          <linearGradient id="goldC" x1="0" x2="1">
+            <stop offset="0" stopColor="#6b3a04" />
+            <stop offset=".18" stopColor="#c9850f" />
+            <stop offset=".4" stopColor="#fff1b8" />
+            <stop offset=".62" stopColor="#f0a828" />
+            <stop offset=".88" stopColor="#8a4f06" />
+            <stop offset="1" stopColor="#4a2702" />
+          </linearGradient>
+          <radialGradient id="bayG" cx=".5" cy=".4" r=".7">
+            <stop offset="0" stopColor="#2b1058" />
+            <stop offset=".7" stopColor="#0d0522" />
+            <stop offset="1" stopColor="#05010f" />
+          </radialGradient>
+          <filter id="bl" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="9" />
+          </filter>
+          <filter id="bl2">
+            <feGaussianBlur stdDeviation="3" />
+          </filter>
+        </defs>
+        {BACK.map(r => (
+          <Ribbon key={r.rot} {...r} />
+        ))}
+      </svg>
+      <RibbonFlows set={BACK} cls="rib-b" />
+    </>
   )
-}
+})
+
+export const FrontRibbons = memo(function FrontRibbons() {
+  return (
+    <>
+      <svg className="pipes rib rib-f" viewBox={VIEWBOX} aria-hidden="true">
+        {FRONT.map(r => (
+          <Ribbon key={r.rot} {...r} />
+        ))}
+      </svg>
+      <RibbonFlows set={FRONT} cls="rib-f" />
+    </>
+  )
+})
 
 /** Six pipes fan out from the bottom of the sphere and drop into a row of holes on the podium. */
 const HOLE_Y = 1130
@@ -112,26 +143,33 @@ function Collar({ x, y, tilt = 0, w = 88 }: { x: number; y: number; tilt?: numbe
   )
 }
 
-export function PipeLayers() {
+export const PipeLayers = memo(function PipeLayers() {
   return (
-    <svg className="pipes pipes-b" viewBox={VIEWBOX} aria-hidden="true">
-      {PIPES.map(({ tube, ride }, i) => (
-        <g key={i} fill="none" strokeLinecap="round">
-          <path id={'pp' + i} d={ride} stroke="none" />
-          <path d={tube} stroke="#36d6ff" strokeWidth="88" opacity=".26" filter="url(#bl)" />
-          <path d={tube} stroke="#c8f6ff" strokeWidth="70" opacity=".55" />
-          <path d={tube} stroke="#14236e" strokeWidth="62" opacity=".78" />
-          <path d={tube} stroke="#36d6ff" strokeWidth="28" opacity=".4" filter="url(#bl2)" />
-          <path d={tube} stroke="#7df9ff" strokeWidth="9" opacity=".85" />
-          <path className="flow" d={tube} stroke="#fff" strokeWidth="5" strokeDasharray="34 260" opacity=".9" />
-        </g>
-      ))}
-    </svg>
+    <>
+      <svg className="pipes pipes-b" viewBox={VIEWBOX} aria-hidden="true">
+        {PIPES.map(({ tube, ride }, i) => (
+          <g key={i} fill="none" strokeLinecap="round">
+            <path id={'pp' + i} d={ride} stroke="none" />
+            <path d={tube} stroke="#36d6ff" strokeWidth="88" opacity=".26" filter="url(#bl)" />
+            <path d={tube} stroke="#c8f6ff" strokeWidth="70" opacity=".55" />
+            <path d={tube} stroke="#14236e" strokeWidth="62" opacity=".78" />
+            <path d={tube} stroke="#36d6ff" strokeWidth="28" opacity=".4" filter="url(#bl2)" />
+            <path d={tube} stroke="#7df9ff" strokeWidth="9" opacity=".85" />
+          </g>
+        ))}
+      </svg>
+      {/* the running light, kept apart from the blurred glows (see RibbonFlows) */}
+      <svg className="pipes pipes-b flows" viewBox={VIEWBOX} aria-hidden="true">
+        {PIPES.map(({ tube }, i) => (
+          <path key={i} className="flow" d={tube} fill="none" strokeLinecap="round" stroke="#fff" strokeWidth="5" strokeDasharray="34 260" opacity=".9" />
+        ))}
+      </svg>
+    </>
   )
-}
+})
 
 /** Front layer, above the riding balls: glass sheen on the tubes, gold collars and the holes. */
-export function PipeBays() {
+export const PipeBays = memo(function PipeBays() {
   return (
     <svg className="pipes pipes-f" viewBox={VIEWBOX} aria-hidden="true">
       {PIPES.map(({ tube, top, hole, color }, i) => (
@@ -152,4 +190,4 @@ export function PipeBays() {
       ))}
     </svg>
   )
-}
+})

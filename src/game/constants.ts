@@ -1,3 +1,13 @@
+/**
+ * Phones and small or low-memory devices get a lighter show: fewer particles, a 30 fps machine
+ * and no running lights. The full show on such devices could run out of graphics memory and go black.
+ */
+export const LITE =
+  typeof window !== 'undefined' &&
+  (matchMedia('(max-width:899px)').matches ||
+    ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) <= 4 ||
+    (navigator.hardwareConcurrency || 8) <= 4)
+
 export const MAXCALL = 36
 /** Numbers per draw: one down each of the six pipes. */
 export const PER = 6

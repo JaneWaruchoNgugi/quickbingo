@@ -1,4 +1,4 @@
-import { bestRow, lines, needCells } from '../game/cards'
+import { bestRow, lineCells, needCells } from '../game/cards'
 import { useGame } from '../hooks/useGame'
 
 export function TicketsPanel() {
@@ -44,8 +44,9 @@ export function TicketsPanel() {
           {g.mine.map((t, i) => {
             if (g.tab && g.tab !== i + 1) return null
             const need = guide ? needCells(t.rows, set) : new Set<number>()
+            const won = lineCells(t.flat, set)
             return (
-              <div key={i} className={'tk' + (lines(t.rows, set) ? ' win' : '')}>
+              <div key={i} className={'tk' + (won.size ? ' win' : '')}>
                 <div className="grid5">
                   {'BINGO'.split('').map((l, k) => (
                     <div key={l} className={`hd h${k}`}>
@@ -55,7 +56,7 @@ export function TicketsPanel() {
                   {t.flat.map((v, k) => {
                     const state = v === 0 ? ' f' : set.has(v) ? ' m' + (g.fresh.has(v) ? ' nw' : '') : ''
                     return (
-                      <div key={k} className={`c col${k % 5}${state}${need.has(k) ? ' need' : ''}`}>
+                      <div key={k} className={`c col${k % 5}${state}${need.has(k) ? ' need' : ''}${won.has(k) ? ' w' : ''}`}>
                         {v === 0 ? 'FREE' : v}
                       </div>
                     )

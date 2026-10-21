@@ -24,3 +24,42 @@
 }
 /* the free-space star on the player's cards: smaller than the number marks */
 .tkp .tk .grid5 .c.f{height:70%!important}
+/* cells of a completed line on the player's cards: gold ring so the line that won is easy to spot */
+.tkp .tk .grid5 .c.m.w{box-shadow:0 0 0 3px #ffd84d,0 0 14px #ffd84d!important;z-index:3}
+.tkp .tk .grid5 .c.f.w{filter:drop-shadow(0 0 6px #ffd84d) brightness(1.15)}
+/*
+ * Phone, playing: the machine shrinks so it and all the cards fit on one screen together.
+ * The cards get a fixed share of the screen and the machine takes what is left.
+ */
+@media(max-width:899px){
+ .arena.playing{--cf:clamp(10.5px,min(3.4vw,2.1svh),15px)}
+ /* the cards panel is about 100px + 20 card-font units tall; the top bar and gaps take ~235px */
+ .arena.playing .hero{width:auto;max-width:100%;height:clamp(120px,calc(100svh - 226px - 20 * var(--cf)),97vw);align-self:center;aspect-ratio:1/.97}
+ .arena.playing .tkp{padding:.5em .55em .55em}
+ .arena.playing .tkp .tabs{gap:.35em;margin-bottom:.75em}
+ .arena.playing .tkp .tab{padding:.25em .1em;font-size:.72em}
+ .arena.playing .tkp .tab.all{width:3em}
+ .arena.playing .tkp .frame{padding:.8em .4em .4em}
+ .arena.playing .tkp .tickets{gap:.4em}
+ .arena.playing .tkp .tk{min-height:0;padding:.3em;flex:1 1 calc(50% - .2em)}
+ .arena.playing .tkp .tk .grid5{gap:.15em;font-size:var(--cf)}
+ .arena.playing .tkp .tk .grid5 .c{height:1.6em;min-height:0}
+ .arena.playing .tkp .tk .grid5 .hd{font-size:.72em;line-height:1.3}
+}
+/* Phone, one card picked: it fills the frame, so give it bigger cells */
+@media(max-width:899px){
+ .arena.playing .tkp .tk:only-child .grid5{font-size:clamp(14px,4.4vw,19px)}
+ .arena.playing .tkp .tk:only-child .grid5 .c{height:1.9em}
+}
+/*
+ * Phones: a lighter show. The running lights redraw four full-size pictures every frame and the
+ * halo re-blurs while it spins; together with the machine that is more than a phone's graphics
+ * memory can hold through a whole round.
+ */
+@media(max-width:899px){
+ .flows{display:none}
+ .halo{animation:none!important;transform:none}
+ .hero .gobj .pb{filter:none}
+ .toast{text-shadow:0 3px 0 #b45309}
+ .arena.playing .toast{font-size:clamp(14px,4.5vw,30px)}
+}

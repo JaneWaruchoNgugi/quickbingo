@@ -53,6 +53,15 @@ export const LINE_IDX: number[][] = (() => {
 /** Number of completed lines. */
 export const lines = (t: Grid, set: Set<number>) => lineList(t).filter(l => l.every(v => v === 0 || set.has(v))).length
 
+/** Cell indexes (row-major) of every completed line. */
+export function lineCells(flat: number[], set: Set<number>): Set<number> {
+  const out = new Set<number>()
+  LINE_IDX.forEach(l => {
+    if (l.every(i => flat[i] === 0 || set.has(flat[i]))) l.forEach(i => out.add(i))
+  })
+  return out
+}
+
 /** Most marked cells in any single line. */
 export function bestRow(t: Grid, set: Set<number>) {
   let best = 0
