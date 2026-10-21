@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { SFX } from './audio/sfx'
 import { game } from './game/store'
 import { useGame } from './hooks/useGame'
+import { Announcer } from './components/Announcer'
 import { Banner } from './components/Banner'
 import { CalledPanel } from './components/CalledPanel'
 import { CardModal } from './components/CardModal'
@@ -44,6 +45,7 @@ export default function App() {
         <TicketsPanel />
         <div className="cover" />
       </div>
+      <Announcer />
       <WinPopup />
       <CardModal />
     </>

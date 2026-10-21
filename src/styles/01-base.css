@@ -21,3 +21,6 @@ button{font:700 1em var(--display);cursor:pointer;border:0;border-radius:.7em;pa
 button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
 button.ghost{background:var(--panel);color:var(--fg);border:1px solid var(--line);width:auto;box-shadow:none}
 button:focus-visible,input:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+/* Phones grow the page sideways when anything pokes past the screen edge (the win confetti flies off-screen), so nothing may scroll sideways. */
+html,body{overflow-x:clip;max-width:100%}
+.bingo,#confetti{contain:paint}

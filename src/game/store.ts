@@ -13,7 +13,10 @@ export interface ChatMsg { id: number; who: string; msg: string }
 export interface WinRow { id: number; label: string; x: number }
 export interface Toast { id: number; txt: string; cls: string }
 export interface Bot { name: string; ts: Grid[] }
-export interface Prefs { sfx: boolean; music: boolean; guide: boolean }
+export interface Prefs { sfx: boolean; music: boolean; voice: boolean; guide: boolean }
+
+/** The host's line after a round: what the bubble shows and how it is coloured. */
+export interface HostLine { key: number; text: string; mood: 'win' | 'near' | 'lose' }
 export type PrefKey = keyof Prefs
 
 export interface ConfettiPiece {
@@ -77,7 +80,7 @@ function loadPrefs(): Prefs {
   } catch {
     raw = {}
   }
-  return { sfx: raw.sfx !== false, music: raw.music !== false, guide: raw.guide !== false }
+  return { sfx: raw.sfx !== false, music: raw.music !== false, voice: raw.voice !== false, guide: raw.guide !== false }
 }
 
 /**
@@ -120,6 +123,7 @@ export class Game {
   xp = 0
   prefs: Prefs = loadPrefs()
   bingo: BingoView | null = null
+  host: HostLine | null = null
   modal = { open: false, pool: [] as Card[], picked: new Set<number>(), idx: 0, openKey: 0, forNext: false, hot: new Set<number>(), quick: 0 }
 
   // ---- machinery ----
@@ -174,6 +178,7 @@ export class Game {
     SFX.bindDrawing(() => this.phase === 'draw')
     SFX.set('sfx', this.prefs.sfx)
     SFX.set('music', this.prefs.music)
+    SFX.set('voice', this.prefs.voice)
     this.say('QueenBingo', 'This looks amazing!')
     this.say('LuckyStar', 'Good luck everyone!')
     this.startRound()
@@ -291,6 +296,10 @@ export class Game {
     setTimeout(() => {
       if (this.mine.length) this.roundWin > 0 ? SFX.cheer(true) : SFX.aww()
     }, 800)
+    if (this.mine.length) {
+      const set = this.calledSet
+      this.hostAfterRound(this.roundWin, this.mine.some(t => bestRow(t.rows, set) === 4))
+    }
     this.timer = window.setInterval(() => {
       // hold the finished round while the win popup is up, so the cards behind it still show the line
       if (this.bingo) return
@@ -555,6 +564,57 @@ export class Game {
     setTimeout(() => SFX.cheer(win > 0), 500)
     clearTimeout(this.bingoTimer)
     this.bingoTimer = window.setTimeout(() => this.hideBingo(), 6500)
+  }
+
+  /**
+   * After the crowd's cheer or groan, the host speaks to the player: the total won this round, or a
+   * nudge to play again. The line waits for the win popup to close so the two never overlap.
+   */
+  private hostAfterRound(win: number, near: boolean) {
+    type Line = [shown: string, spoken: string, mood: HostLine['mood']]
+    const pick = (a: Line[]) => a[rnd(a.length)]
+    const [text, spoken, mood] =
+      win > 0
+        ? pick([
+            [`Congratulations! You won KSh ${win} this round. Keep that luck rolling!`, `Congratulations! You won ${win} shillings this round. Keep that luck rolling!`, 'win'],
+            [`What a round! KSh ${win} is yours. Ready to win again?`, `What a round! ${win} shillings is yours. Ready to win again?`, 'win'],
+            [`Winner! KSh ${win} added to your balance. The next round starts now!`, `Winner! ${win} shillings added to your balance. The next round starts now!`, 'win'],
+          ])
+        : near
+          ? pick([
+              ['So close! Just one number away. Your luck is warming up, try again!', 'So close! Just one number away. Your luck is warming up, try again!', 'near'],
+              ['One more number and that was yours! Grab your cards, the next one could be it.', 'One more number and that was yours! Grab your cards, the next one could be it.', 'near'],
+            ])
+          : pick([
+              ['Not this time, but every round is a fresh chance. Try your luck again!', 'Not this time, but every round is a fresh chance. Try your luck again!', 'lose'],
+              ["Hard luck this round! Pick your cards, the next winner could be you.", 'Hard luck this round! Pick your cards, the next winner could be you.', 'lose'],
+              ["Don't give up! Fortune favours the brave. The next round starts now!", "Don't give up! Fortune favours the brave. The next round starts now!", 'lose'],
+            ])
+    const key = ++this.uid
+    let waited = 0
+    const go = () => {
+      if (this.bingo && waited < 8000) {
+        waited += 300
+        return setTimeout(go, 300)
+      }
+      this.host = { key, text, mood }
+      this.say('Host', text)
+      SFX.say(spoken, true)
+      this.emit()
+      setTimeout(() => {
+        if (this.host?.key !== key) return
+        this.host = null
+        this.emit()
+      }, 6500)
+    }
+    // after the cheer or groan has had its moment
+    setTimeout(go, 2000)
+  }
+
+  hideHost() {
+    if (!this.host) return
+    this.host = null
+    this.emit()
   }
 
   hideBingo() {

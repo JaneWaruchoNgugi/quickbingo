@@ -819,25 +819,25 @@ function createSfx() {
     /** the blower: soft air with a few plastic clicks, until the first ball is sucked in (dur seconds) */
     whirl(dur = 1.5) {
       if (!ok()) return
-      play(kit.whirl, now(), { vol: 0.22, dur: Math.min(dur, kit.whirl.duration) })
+      play(kit.whirl, now(), { vol: 0.09, dur: Math.min(dur, kit.whirl.duration) })
     },
     /** pipe i takes its ball: a light tok and a short swish down the tube */
     slide(i = 0, _dur = 1.1, at?: number) {
       if (!ok()) return
       const t = at ?? now()
       const pan = (i - 2.5) / 3
-      play(kit.tok, t, { vol: 0.24, pan, rate: 0.9 + i * 0.04 })
-      play(kit.swish, t + 0.03, { vol: 0.15, pan })
+      play(kit.tok, t, { vol: 0.1, pan, rate: 0.9 + i * 0.04 })
+      play(kit.swish, t + 0.03, { vol: 0.06, pan })
     },
     /** the ball pops out of its hole: a bubbly blip, climbing C – E – G – A – C – E across the pipes */
     ding(i: number, at?: number) {
       if (!ok()) return
-      play(kit.pop, at ?? now(), { vol: 0.22, pan: (i - 2.5) / 3, rate: POP_STEPS[i] ?? 1 })
+      play(kit.pop, at ?? now(), { vol: 0.14, pan: (i - 2.5) / 3, rate: POP_STEPS[i] ?? 1 })
     },
     /** the ball settles in the tray under its hole */
     land(_n: number, i: number, at?: number) {
       if (!ok()) return
-      play(kit.land, at ?? now(), { vol: 0.26, pan: (i - 2.5) / 3, rate: rnd(0.95, 1.05) })
+      play(kit.land, at ?? now(), { vol: 0.16, pan: (i - 2.5) / 3, rate: rnd(0.95, 1.05) })
     },
     /** one of your numbers came up */
     hit(at?: number) {

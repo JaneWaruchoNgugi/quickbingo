@@ -6,6 +6,7 @@ import type { PrefKey } from '../game/store'
 const ROWS: { k: PrefKey; label: string }[] = [
   { k: 'sfx', label: 'Game sounds' },
   { k: 'music', label: 'Music' },
+  { k: 'voice', label: 'Announcer voice' },
   { k: 'guide', label: 'Hint glow' },
 ]
 

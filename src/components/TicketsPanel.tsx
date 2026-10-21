@@ -46,7 +46,14 @@ export function TicketsPanel() {
             const need = guide ? needCells(t.rows, set) : new Set<number>()
             const won = lineCells(t.flat, set)
             return (
-              <div key={i} className={'tk' + (won.size ? ' win' : '')}>
+              <div key={i} className={'tk a' + (i % 4) + (won.size ? ' win' : '')}>
+                <div className="tkh">
+                  <b>CARD {i + 1}</b>
+                  <span className="tkprice">KSh {t.price}</span>
+                  <span className="togo">
+                    {won.size ? 'BINGO!' : bests[i] >= 4 ? '1 to go!' : `${5 - bests[i]} to go`}
+                  </span>
+                </div>
                 <div className="grid5">
                   {'BINGO'.split('').map((l, k) => (
                     <div key={l} className={`hd h${k}`}>

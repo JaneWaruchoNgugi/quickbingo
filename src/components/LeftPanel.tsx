@@ -1,3 +1,4 @@
+import { Ticket, Zap } from 'lucide-react'
 import { QUICK_CARDS, QUICK_PRICES } from '../game/constants'
 import type { Game } from '../game/store'
 import { useGame } from '../hooks/useGame'
@@ -42,19 +43,27 @@ export function QuickPick({ className }: { className?: string }) {
   const g = useGame()
   return (
     <div className={'qpick' + (className ? ' ' + className : '')}>
-      <span className="qlabel">
-        {g.phase === 'buy' ? 'Instant play' : 'Next round'} · {QUICK_CARDS} cards · KSh each
-      </span>
+      <div className="qhead">
+        <span className="qlabel">
+          <Zap aria-hidden="true" />
+          {g.phase === 'buy' ? 'Instant play' : 'Next round'}
+        </span>
+        <span className="qmeta">{QUICK_CARDS} cards · KSh each</span>
+      </div>
       <div className="qchips">
         {QUICK_PRICES.map(p => (
           <button
             key={p}
             type="button"
             className="qchip"
+            aria-label={`${QUICK_CARDS} cards at KSh ${p} each, KSh ${p * QUICK_CARDS} total`}
             disabled={!g.canPick || p * QUICK_CARDS > g.pts}
             onClick={() => g.openQuick(p)}
           >
-            {p}
+            <span className="qcoin">
+              <small>KSh</small>
+              <b>{p}</b>
+            </span>
           </button>
         ))}
       </div>
@@ -65,8 +74,13 @@ export function QuickPick({ className }: { className?: string }) {
 export function PickButton({ className }: { className?: string }) {
   const g = useGame()
   return (
-    <button className={className} disabled={!g.canPick || g.pts < 10} onClick={() => g.openModal()}>
-      {pickLabel(g)}
+    <button
+      className={'pickbtn' + (className ? ' ' + className : '')}
+      disabled={!g.canPick || g.pts < 10}
+      onClick={() => g.openModal()}
+    >
+      <Ticket aria-hidden="true" />
+      <span>{pickLabel(g)}</span>
     </button>
   )
 }

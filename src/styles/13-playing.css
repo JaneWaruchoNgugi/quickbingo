@@ -28,13 +28,12 @@
 .tkp .tk .grid5 .c.m.w{box-shadow:0 0 0 3px #ffd84d,0 0 14px #ffd84d!important;z-index:3}
 .tkp .tk .grid5 .c.f.w{filter:drop-shadow(0 0 6px #ffd84d) brightness(1.15)}
 /*
- * Phone, playing: the machine shrinks so it and all the cards fit on one screen together.
- * The cards get a fixed share of the screen and the machine takes what is left.
+ * Phone, playing: the cards panel is made compact. The machine keeps its full size (see below)
+ * and the cards follow under it, so the page scrolls on short screens.
  */
 @media(max-width:899px){
  .arena.playing{--cf:clamp(10.5px,min(3.4vw,2.1svh),15px)}
  /* the cards panel is about 100px + 20 card-font units tall; the top bar and gaps take ~235px */
- .arena.playing .hero{width:auto;max-width:100%;height:clamp(120px,calc(100svh - 226px - 20 * var(--cf)),97vw);align-self:center;aspect-ratio:1/.97}
  .arena.playing .tkp{padding:.5em .55em .55em}
  .arena.playing .tkp .tabs{gap:.35em;margin-bottom:.75em}
  .arena.playing .tkp .tab{padding:.25em .1em;font-size:.72em}
@@ -62,4 +61,19 @@
  .hero .gobj .pb{filter:none}
  .toast{text-shadow:0 3px 0 #b45309}
  .arena.playing .toast{font-size:clamp(14px,4.5vw,30px)}
+}
+/*
+ * Phone, playing: the machine stays full width and shows the whole podium, the same size as before
+ * the cards were bought; only the empty strip under the podium is trimmed.
+ */
+@media(max-width:899px){
+ .arena.playing .hero{width:100%;height:auto;aspect-ratio:1/1.08}
+}
+/* Phone: the drawn balls in the holes get bigger, with bigger numbers, so they can be read at a glance. */
+@media(max-width:899px){
+ .hero .gobj .tb{width:6.3em;height:6.3em}
+ .hero .gobj .tray .tb{margin:-3.15em 0 0 -3.15em}
+ .hero .gobj .tb small{font-size:1.15em}
+ .hero .gobj .tb b{font-size:1.85em;letter-spacing:-.03em}
+ .hero .gobj .tb::before{inset:12%}
 }
