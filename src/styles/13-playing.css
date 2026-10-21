@@ -78,3 +78,14 @@
  .hero .gobj .tb b{font-size:1.85em;letter-spacing:-.03em}
  .hero .gobj .tb::before{inset:12%}
 }
+/*
+ * Phones, while balls are drawn: no blurred halo, no per-ball label layer, no glowing sparks and
+ * no pulsing glow on the next-ball slot, so a draw adds almost nothing to graphics memory.
+ */
+@media(max-width:899px){
+ .halo{display:none}
+ .hero .gobj .pb .lb{will-change:auto}
+ .hero .gobj .spark{box-shadow:none}
+ .hero .gobj .spout.fire{box-shadow:0 0 0 .2em #ffe08a,0 0 0 .36em #b9770e,inset 0 .5em .8em #000c}
+ .calledp .ball.nx{animation:none!important}
+}

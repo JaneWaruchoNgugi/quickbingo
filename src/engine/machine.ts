@@ -190,8 +190,16 @@ function paintBall(c: CanvasRenderingContext2D, n: number, X: number, Y: number,
 }
 
 const sprites = new Map<number, HTMLCanvasElement>()
+/**
+ * Drops the cached ball pictures. Each one is shrunk to nothing first: Safari on iPhone frees a
+ * canvas's memory late, and enough dropped canvases blank the page.
+ */
+function clearSprites() {
+  sprites.forEach(s => (s.width = s.height = 0))
+  sprites.clear()
+}
 // a sprite painted before the web font arrived would keep the fallback font
-document.fonts?.addEventListener?.('loadingdone', () => sprites.clear())
+document.fonts?.addEventListener?.('loadingdone', clearSprites)
 
 /** The cached picture of ball `n` at radius SPR_R, centred in a square of side 2 * SPR_PAD * SPR_R. */
 function sprite(n: number) {
@@ -216,7 +224,7 @@ export function startMachine(cv: HTMLCanvasElement, ms: MachineState): () => voi
   let raf = 0
   const reduce = matchMedia('(prefers-reduced-motion:reduce)')
   // a busy phone may drop the canvas memory; the cached ball pictures go with it, so repaint them
-  const restore = () => sprites.clear()
+  const restore = clearSprites
   cv.addEventListener('contextrestored', restore)
   // glass highlight over the whole sphere; it never changes, so it is built once
   const hl = c.createRadialGradient(W * 0.3, W * 0.24, 10, W * 0.3, W * 0.24, W * 0.4)

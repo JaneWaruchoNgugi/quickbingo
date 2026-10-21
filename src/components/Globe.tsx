@@ -56,7 +56,7 @@ export function Globe() {
       const spouts = only === undefined ? all : all.slice(only, only + 1)
       spouts.forEach(e => {
         const r = e.getBoundingClientRect()
-        for (let k = 0; k < (LITE ? 5 : 12); k++) {
+        for (let k = 0; k < (LITE ? 3 : 12); k++) {
           const d = document.createElement('i')
           d.className = 'spark'
           d.style.left = ((r.left + r.width / 2 - gr.left) / gr.width) * 100 + '%'
@@ -132,7 +132,7 @@ export function Globe() {
           // ease-out-back: it shoots out of the hole, overshoots a little and settles
           const e = 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2)
           move(sx + (ex - sx) * Math.min(1, e), sy + (ey - sy) * Math.min(1, e), 1 + (sc - 1) * e)
-          lb.style.transform = 'rotate(' + (1 - k) * 40 + 'deg)'
+          if (!LITE) lb.style.transform = 'rotate(' + (1 - k) * 40 + 'deg)'
           if (k < 1) requestAnimationFrame(fall)
           else {
             done()
@@ -148,8 +148,8 @@ export function Globe() {
         const s = len * (0.35 * k + 0.65 * k * k)
         const pt = at(s)
         place(pt.x, pt.y)
-        // roll: the label turns as far as the ball has travelled
-        lb.style.transform = 'rotate(' + (s / BALL_R) * (180 / Math.PI) * (i < 3 ? -1 : 1) + 'deg)'
+        // roll: the label turns as far as the ball has travelled (not on phones: one less layer per ball)
+        if (!LITE) lb.style.transform = 'rotate(' + (s / BALL_R) * (180 / Math.PI) * (i < 3 ? -1 : 1) + 'deg)'
         if (k < 1) requestAnimationFrame(step)
         else pop()
       }
