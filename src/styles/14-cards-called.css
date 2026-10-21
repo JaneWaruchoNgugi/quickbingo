@@ -67,3 +67,32 @@
  .tkh{font-size:clamp(10px,2.8vw,13px)}
  .tkp .tk:only-child .tkh{font-size:14px}
 }
+
+/*
+ * Phone, playing: the machine and all the player's cards fit on one screen. The machine keeps the
+ * full width (trimmed just under the holes) and only shrinks, down to 80%, on very short screens;
+ * the cards panel takes exactly the height that is left and the cells share it.
+ */
+@media(max-width:599px){
+ .arena.playing{--hw:min(calc(100vw - 24px),520px);--hh:clamp(calc(var(--hw) * .8),calc(100svh - 382px),var(--hw))}
+ .arena.playing .hero{width:var(--hh)!important;height:var(--hh)!important;max-width:100%;aspect-ratio:auto!important;align-self:center;margin-top:-4px}
+ .arena.playing .tkp{height:calc(100svh - var(--hh) - 88px);min-height:280px;display:flex;flex-direction:column;padding:.45em .5em .5em!important;margin-top:-4px}
+ .arena.playing .tkp .tabs{flex:none;margin-bottom:.7em!important;gap:.3em!important}
+ .arena.playing .tkp .tab{padding:.2em .1em!important;font-size:.68em!important;line-height:1.15}
+ .arena.playing .tkp .tab.all{width:2.8em!important}
+ .arena.playing .tkp .dots{margin-top:.15em}
+ .arena.playing .tkp .frame{flex:1;min-height:0!important;height:auto!important;display:flex;flex-direction:column;padding:.75em .35em .35em!important}
+ .arena.playing .tkp .tickets{flex:1;min-height:0;height:auto!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:.35em!important}
+ .arena.playing .tkp .tickets:has(>.tk:only-child){grid-template-columns:minmax(0,1fr)}
+ .arena.playing .tkp .tk{min-height:0!important;max-width:none!important;padding:.25em .3em .3em!important;gap:.2em;display:flex;flex-direction:column}
+ .arena.playing .tkp .tkh{font-size:clamp(9px,min(2.6vw,1.45svh),12px)}
+ .arena.playing .tkp .tk .grid5{flex:1;min-height:0;grid-template-rows:auto repeat(5,minmax(0,1fr));gap:.14em!important;font-size:clamp(10px,min(3.4vw,1.85svh),15px)!important}
+ .arena.playing .tkp .tk .grid5 .c{height:auto!important;min-height:0!important}
+ .arena.playing .tkp .tk .grid5 .c.m,.arena.playing .tkp .tk .grid5 .c.f{height:100%!important}
+ .arena.playing .tkp .tk .grid5 .hd{font-size:.7em!important;line-height:1.35!important}
+ .arena.playing .tkp .tk:only-child .grid5{font-size:clamp(13px,min(4.6vw,2.6svh),20px)!important}
+}
+/* short phones: the card headers go (the tabs above still show each card's progress) so the numbers keep their size */
+@media(max-width:599px) and (max-height:680px){
+ .arena.playing .tkp .tk:not(:only-child) .tkh{display:none}
+}

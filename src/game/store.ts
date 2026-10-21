@@ -119,7 +119,6 @@ export class Game {
   winners: WinRow[] = []
   chatLog: ChatMsg[] = []
   toasts: Toast[] = []
-  potN = 5091
   xp = 0
   prefs: Prefs = loadPrefs()
   bingo: BingoView | null = null
@@ -185,12 +184,6 @@ export class Game {
     setInterval(() => {
       if (Math.random() < 0.5) this.say(CHATTERS[rnd(4)], CHAT_LINES[rnd(CHAT_LINES.length)])
     }, 4000)
-    setInterval(() => {
-      if (this.phase === 'buy') {
-        this.potN += 10 * (1 + Math.floor(Math.random() * 4))
-        this.emit()
-      }
-    }, 1200)
   }
 
   say(who: string, msg: string) {
@@ -458,6 +451,8 @@ export class Game {
           this.say('Host', 'You won ' + t.l + '! +KSh ' + pay)
         }
         this.winners.unshift({ id: ++this.uid, label: t.l + ' · ' + who, x: t.x })
+        // like the chat, keep the list short so it never grows for as long as the game is open
+        if (this.winners.length > 20) this.winners.length = 20
         this.say('Host', who + ' won ' + t.l)
       }
     })
@@ -706,6 +701,14 @@ export class Game {
       this.modal.idx = this.mod(this.modal.idx + 1)
       this.emit()
     }, 450)
+  }
+
+  /** Takes card `i` back out of the selection (the picker's basket). */
+  unpick(i: number) {
+    const m = this.modal
+    if (m.quick || !m.picked.delete(i)) return
+    SFX.pop()
+    this.emit()
   }
 
   buy() {

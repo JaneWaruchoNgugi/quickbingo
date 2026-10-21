@@ -56,7 +56,8 @@
  * memory can hold through a whole round.
  */
 @media(max-width:899px){
- .flows{display:none}
+ /* svg.pipes in 02 is more specific than .flows alone, which kept the lights running on phones */
+ .gobj svg.flows{display:none}
  .halo{animation:none!important;transform:none}
  .hero .gobj .pb{filter:none}
  .toast{text-shadow:0 3px 0 #b45309}

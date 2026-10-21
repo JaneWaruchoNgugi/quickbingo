@@ -1,0 +1,26 @@
+/* Settings: a glass card under the gear with one row per switch: coloured icon, label and hint, switch. */
+.spanel{position:fixed;z-index:61;top:64px!important;left:12px!important;right:auto!important;bottom:auto!important;width:min(340px,calc(100vw - 24px));padding:10px;border-radius:20px;display:flex;flex-direction:column;gap:6px;
+ background:linear-gradient(180deg,#1b1356f7,#0b0b30f7) padding-box,linear-gradient(140deg,#a855f7,#38bdf8 50%,#f6b93b) border-box;border:1.5px solid #0000;box-shadow:0 18px 50px #000c,0 0 30px #7c3aed44;backdrop-filter:blur(12px);transform-origin:top left;animation:spin-in .28s cubic-bezier(.2,1.4,.4,1)}
+.spanel[hidden]{display:none}
+@keyframes spin-in{from{transform:translateY(-8px) scale(.94);opacity:0}}
+.shead{display:flex;align-items:center;gap:8px;padding:6px 6px 8px 8px;color:#dfe5ff;border-bottom:1px solid #ffffff14;margin-bottom:2px}
+.shead svg{width:18px;height:18px;color:var(--gold2)}
+.shead b{flex:1;font:800 16px var(--display);letter-spacing:.02em}
+.shead .sx{width:32px;height:32px;padding:0;border-radius:50%;display:grid;place-items:center;background:#ffffff12;border:0;color:#cfd6ff;box-shadow:none}
+.shead .sx svg{width:16px;height:16px;color:inherit}
+.spanel .srow{display:flex;align-items:center;gap:12px;padding:10px;border-radius:14px;background:#ffffff08;border:1px solid #ffffff10;transition:background .2s,border-color .2s;font:inherit}
+.spanel .srow.on{background:color-mix(in srgb,var(--sc) 12%,#0000);border-color:color-mix(in srgb,var(--sc) 35%,#0000)}
+.sico{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#ffffff10;color:#8d99c9;transition:background .2s,color .2s,box-shadow .2s}
+.sico svg{width:20px;height:20px}
+.srow.on .sico{background:var(--sc);color:#10122e;box-shadow:0 0 14px color-mix(in srgb,var(--sc) 60%,#0000)}
+.stx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.stx b{font:800 15px var(--display);color:#eef1ff}
+.stx small{font:600 12px var(--body);color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spanel .sw{width:54px;height:32px;border-radius:99px;background:#2a2f5c;box-shadow:inset 0 2px 4px #0006}
+.spanel .sw i{top:3px;left:3px;width:26px;height:26px;display:grid;place-items:center;color:#5b628f;transition:transform .25s cubic-bezier(.3,1.5,.5,1),color .2s}
+.spanel .sw i svg{width:14px;height:14px;stroke-width:3}
+.spanel .sw.on{background:var(--sc,#08d06a);box-shadow:inset 0 2px 4px #0003,0 0 12px color-mix(in srgb,var(--sc,#08d06a) 55%,#0000)}
+.spanel .sw.on i{transform:translateX(22px);color:var(--sc,#08d06a)}
+.spanel .sw:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media(min-width:900px){.spanel{top:calc(4.6% + 30px)!important;left:1.25%!important}}
+@media(prefers-reduced-motion:reduce){.spanel{animation:none}}

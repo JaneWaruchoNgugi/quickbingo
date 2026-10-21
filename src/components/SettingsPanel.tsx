@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Settings } from 'lucide-react'
+import { Check, Mic, Music, Settings, Sparkles, Volume2, X, type LucideIcon } from 'lucide-react'
 import { useGame } from '../hooks/useGame'
 import type { PrefKey } from '../game/store'
 
-const ROWS: { k: PrefKey; label: string }[] = [
-  { k: 'sfx', label: 'Game sounds' },
-  { k: 'music', label: 'Music' },
-  { k: 'voice', label: 'Announcer voice' },
-  { k: 'guide', label: 'Hint glow' },
+const ROWS: { k: PrefKey; label: string; hint: string; Icon: LucideIcon; c: string }[] = [
+  { k: 'sfx', label: 'Game sounds', hint: 'Balls, coins and the crowd', Icon: Volume2, c: '#38bdf8' },
+  { k: 'music', label: 'Music', hint: 'Background track', Icon: Music, c: '#a855f7' },
+  { k: 'voice', label: 'Announcer voice', hint: 'The host after each round', Icon: Mic, c: '#f6b93b' },
+  { k: 'guide', label: 'Hint glow', hint: 'Lights up the numbers you need', Icon: Sparkles, c: '#22c55e' },
 ]
 
 /** Gear button (top left) with the sound, music and guide-light switches. */
@@ -25,10 +25,23 @@ export function SettingsPanel() {
 
   return (
     <>
-      <div className="spanel" hidden={!open}>
-        {ROWS.map(({ k, label }) => (
-          <div className="srow" key={k}>
-            <span>{label}</span>
+      <div className="spanel" hidden={!open} role="dialog" aria-label="Settings">
+        <div className="shead">
+          <Settings aria-hidden="true" />
+          <b>Settings</b>
+          <button className="sx" aria-label="Close settings" onClick={() => setOpen(false)}>
+            <X aria-hidden="true" />
+          </button>
+        </div>
+        {ROWS.map(({ k, label, hint, Icon, c }) => (
+          <div className={'srow' + (g.prefs[k] ? ' on' : '')} key={k} style={{ '--sc': c } as React.CSSProperties}>
+            <span className="sico" aria-hidden="true">
+              <Icon />
+            </span>
+            <span className="stx">
+              <b>{label}</b>
+              <small>{hint}</small>
+            </span>
             <button
               className={'sw' + (g.prefs[k] ? ' on' : '')}
               role="switch"
@@ -39,7 +52,7 @@ export function SettingsPanel() {
                 g.setPref(k, !g.prefs[k])
               }}
             >
-              <i />
+              <i>{g.prefs[k] ? <Check aria-hidden="true" /> : <X aria-hidden="true" />}</i>
             </button>
           </div>
         ))}
