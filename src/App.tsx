@@ -3,7 +3,6 @@ import { SFX } from './audio/sfx'
 import { game } from './game/store'
 import { useGame } from './hooks/useGame'
 import { Announcer } from './components/Announcer'
-import { Banner } from './components/Banner'
 import { CalledPanel } from './components/CalledPanel'
 import { CardModal } from './components/CardModal'
 import { ChatPanel } from './components/ChatPanel'
@@ -32,13 +31,12 @@ export default function App() {
 
   return (
     <>
-      <div className={'arena' + (g.playing ? ' playing' : g.phase !== 'buy' ? ' watching' : '')}>
+      <div className={'arena' + (g.playing ? ' playing' : g.phase !== 'buy' ? ' watching' + (g.queued.length ? ' queued' : '') : '')}>
         <TopBar />
         <LeftPanel />
         <NextBox />
         <Hero />
         <MobilePick />
-        <Banner />
         <CalledPanel />
         <WinnersPanel />
         <ChatPanel />

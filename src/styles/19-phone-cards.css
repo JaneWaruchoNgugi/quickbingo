@@ -1,0 +1,31 @@
+/*
+ * Phone: the player's cards, uncluttered. No tab row, no "cards bought" pill and no gold frame;
+ * each card is a quiet panel with a one-line header, plain numbers and filled tiles for the
+ * called ones, so the four cards get the whole panel and more space between numbers.
+ */
+@media(max-width:599px){
+ .arena .tkp{padding:.5em!important}
+ .arena .tkp .tabs,.arena .tkp .frame>.badge{display:none!important}
+ .arena .tkp .frame{border:0!important;background:none!important;box-shadow:none!important;padding:0!important}
+ .arena .tkp .tickets{gap:.5em!important}
+ .arena .tkp .tk{background:#ffffff08!important;border:1px solid #ffffff14!important;border-radius:12px!important;box-shadow:inset 0 2px 0 var(--acc)!important;padding:.45em .45em .5em!important;gap:.35em!important}
+ .arena .tkp .tk .tkh,.arena.playing .tkp .tk:not(:only-child) .tkh{display:flex!important;padding:0 .1em;font-size:clamp(10px,2.9vw,12px)!important;letter-spacing:.03em}
+ .arena .tkp .tkh b{text-shadow:none}
+ .arena .tkp .tkh .tkprice{color:#aab0d6;font-weight:700}
+ .arena .tkp .tkh .togo{margin-left:auto;background:none!important;padding:0!important;color:#dfe3ff}
+ .arena .tkp .tk .grid5{gap:.22em!important}
+ .arena .tkp .tk .grid5 .hd{background:none!important;box-shadow:none!important;padding:0!important;font-size:.72em!important;line-height:1.2!important}
+ .arena .tkp .tk .grid5 .hd.h0{color:#38bdf8}.arena .tkp .tk .grid5 .hd.h1{color:#ff5468}.arena .tkp .tk .grid5 .hd.h2{color:#ffc93a}.arena .tkp .tk .grid5 .hd.h3{color:#b77bff}.arena .tkp .tk .grid5 .hd.h4{color:#3fd77f}
+ .arena .tkp .tk .grid5 .c:not(.m):not(.f){background:none!important;box-shadow:none!important;color:#dfe3ff;font-weight:700}
+ .arena .tkp .tk .grid5 .c.need:not(.m){outline:.12em solid #ffd84d;outline-offset:-.12em;border-radius:.42em}
+ .arena .tkp .tk .grid5 .c.f{background:#ffd75e14!important;box-shadow:none!important}
+}
+@media(max-width:599px){.arena .tkp .frame{margin:0!important}}
+
+/* The globe: a thin glass outline instead of the thick pink rim. */
+.gobj .gl-shine{border-width:1.5px!important;border-color:#ffc2f866!important}
+
+/* Phone and tablet, while cards are on sale: the countdown sits over the middle of the globe. */
+.hero .hring{left:50%!important;top:31%!important;width:clamp(110px,36%,190px)!important;transform:translate(-50%,-50%);z-index:12;container-type:inline-size;box-shadow:0 8px 30px #000c!important}
+.hero .hring>div{width:86%;background:#0a0c2ef0;font-size:22cqw!important;line-height:1}
+.hero .hring small{font-size:8.5cqw!important;margin-top:.35em;letter-spacing:.04em;text-transform:uppercase;color:#cfd6ff}

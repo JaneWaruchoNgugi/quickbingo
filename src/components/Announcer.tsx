@@ -1,24 +1,27 @@
-import { Mic, X } from 'lucide-react'
+import { Clock, CirclePlay, RotateCcw, Trophy, X } from 'lucide-react'
 import { useGame } from '../hooks/useGame'
 
-/** The host after a round: a speech bubble beside the announcer, saying what was won or cheering the player on. */
+/** A short message at the bottom: the total won after a round, a nudge to try again, or news of saved cards. */
+const LOOK = {
+  win: { cls: 'win', label: 'Round won', Icon: Trophy },
+  near: { cls: 'lose', label: 'Round over', Icon: RotateCcw },
+  lose: { cls: 'lose', label: 'Round over', Icon: RotateCcw },
+  saved: { cls: 'saved', label: 'Next round', Icon: Clock },
+  live: { cls: 'saved', label: 'Cards in play', Icon: CirclePlay },
+}
+
 export function Announcer() {
   const g = useGame()
   const h = g.host
   if (!h) return null
+  const { cls, label, Icon } = LOOK[h.mood]
   return (
-    <div key={h.key} className={'host ' + h.mood} role="status" aria-live="polite" onClick={() => g.hideHost()}>
-      <div className="hav" aria-hidden="true">
-        <Mic />
-        <span className="hbars">
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
-      </div>
+    <div key={h.key} className={'host ' + cls} role="status" aria-live="polite" onClick={() => g.hideHost()}>
+      <span className="hav" aria-hidden="true">
+        <Icon />
+      </span>
       <div className="hbub">
-        <span className="hname">{h.mood === 'win' ? 'Host · Winner!' : 'Host'}</span>
+        <span className="hname">{label}</span>
         <p>{h.text}</p>
       </div>
       <button className="hx" aria-label="Close" onClick={() => g.hideHost()}>

@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Check, Mic, Music, Settings, Sparkles, Volume2, X, type LucideIcon } from 'lucide-react'
+import { Check, Music, Settings, Sparkles, Volume2, X, type LucideIcon } from 'lucide-react'
 import { useGame } from '../hooks/useGame'
 import type { PrefKey } from '../game/store'
 
 const ROWS: { k: PrefKey; label: string; hint: string; Icon: LucideIcon; c: string }[] = [
   { k: 'sfx', label: 'Game sounds', hint: 'Balls, coins and the crowd', Icon: Volume2, c: '#38bdf8' },
   { k: 'music', label: 'Music', hint: 'Background track', Icon: Music, c: '#a855f7' },
-  { k: 'voice', label: 'Announcer voice', hint: 'The host after each round', Icon: Mic, c: '#f6b93b' },
   { k: 'guide', label: 'Hint glow', hint: 'Lights up the numbers you need', Icon: Sparkles, c: '#22c55e' },
 ]
 

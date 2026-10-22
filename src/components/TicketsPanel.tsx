@@ -1,3 +1,4 @@
+import { Clock } from 'lucide-react'
 import { bestRow, lineCells, needCells } from '../game/cards'
 import { useGame } from '../hooks/useGame'
 
@@ -34,6 +35,24 @@ export function TicketsPanel() {
           </button>
         ))}
       </div>
+      {g.queued.length > 0 && (
+        <div className="saved" role="status">
+          <span className="sic" aria-hidden="true">
+            <Clock />
+          </span>
+          <div>
+            <b>
+              {g.queued.length} card{g.queued.length > 1 ? 's' : ''} saved for the next round
+            </b>
+            <small>{g.queued.length > 1 ? 'They start' : 'It starts'} automatically when this round ends</small>
+          </div>
+          <span className="schips">
+            {g.queued.map((t, i) => (
+              <i key={i}>{t.price}</i>
+            ))}
+          </span>
+        </div>
+      )}
       <div className={'frame' + (g.myBought ? ' bought' : '')}>
         <div className="badge" hidden={!g.myBought && !g.queued.length}>
           {g.myBought && `✓ ${g.mine.length} CARD${g.mine.length > 1 ? 'S' : ''} BOUGHT · KSh ${total}`}

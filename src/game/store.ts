@@ -15,8 +15,8 @@ export interface Toast { id: number; txt: string; cls: string }
 export interface Bot { name: string; ts: Grid[] }
 export interface Prefs { sfx: boolean; music: boolean; voice: boolean; guide: boolean }
 
-/** The host's line after a round: what the bubble shows and how it is coloured. */
-export interface HostLine { key: number; text: string; mood: 'win' | 'near' | 'lose' }
+/** The message at the bottom of the screen: after a round, or about saved cards. */
+export interface HostLine { key: number; text: string; mood: 'win' | 'near' | 'lose' | 'saved' | 'live' }
 export type PrefKey = keyof Prefs
 
 export interface ConfettiPiece {
@@ -216,6 +216,10 @@ export class Game {
     this.called = []
     this.mine = this.queued
     this.queued = []
+    if (this.mine.length) {
+      const k = this.mine.length
+      this.note(`Your ${k} saved card${k > 1 ? 's are' : ' is'} now in play. Good luck!`, 'live')
+    }
     this.won = {}
     this.myBought = this.mine.length > 0
     this.tab = 0
@@ -290,8 +294,7 @@ export class Game {
       if (this.mine.length) this.roundWin > 0 ? SFX.cheer(true) : SFX.aww()
     }, 800)
     if (this.mine.length) {
-      const set = this.calledSet
-      this.hostAfterRound(this.roundWin, this.mine.some(t => bestRow(t.rows, set) === 4))
+      this.hostAfterRound(this.roundWin)
     }
     this.timer = window.setInterval(() => {
       // hold the finished round while the win popup is up, so the cards behind it still show the line
@@ -562,48 +565,33 @@ export class Game {
   }
 
   /**
-   * After the crowd's cheer or groan, the host speaks to the player: the total won this round, or a
-   * nudge to play again. The line waits for the win popup to close so the two never overlap.
+   * After a round: one short message with what the round paid, or a nudge to try again. It waits
+   * for the cheer or groan, and for the win popup to close, so the two never overlap.
    */
-  private hostAfterRound(win: number, near: boolean) {
-    type Line = [shown: string, spoken: string, mood: HostLine['mood']]
-    const pick = (a: Line[]) => a[rnd(a.length)]
-    const [text, spoken, mood] =
-      win > 0
-        ? pick([
-            [`Congratulations! You won KSh ${win} this round. Keep that luck rolling!`, `Congratulations! You won ${win} shillings this round. Keep that luck rolling!`, 'win'],
-            [`What a round! KSh ${win} is yours. Ready to win again?`, `What a round! ${win} shillings is yours. Ready to win again?`, 'win'],
-            [`Winner! KSh ${win} added to your balance. The next round starts now!`, `Winner! ${win} shillings added to your balance. The next round starts now!`, 'win'],
-          ])
-        : near
-          ? pick([
-              ['So close! Just one number away. Your luck is warming up, try again!', 'So close! Just one number away. Your luck is warming up, try again!', 'near'],
-              ['One more number and that was yours! Grab your cards, the next one could be it.', 'One more number and that was yours! Grab your cards, the next one could be it.', 'near'],
-            ])
-          : pick([
-              ['Not this time, but every round is a fresh chance. Try your luck again!', 'Not this time, but every round is a fresh chance. Try your luck again!', 'lose'],
-              ["Hard luck this round! Pick your cards, the next winner could be you.", 'Hard luck this round! Pick your cards, the next winner could be you.', 'lose'],
-              ["Don't give up! Fortune favours the brave. The next round starts now!", "Don't give up! Fortune favours the brave. The next round starts now!", 'lose'],
-            ])
-    const key = ++this.uid
+  private hostAfterRound(win: number) {
+    const [text, mood]: [string, HostLine['mood']] =
+      win > 0 ? [`You won KSh ${win} this round!`, 'win'] : ['No win this round. Try again next round!', 'lose']
     let waited = 0
     const go = () => {
       if (this.bingo && waited < 8000) {
         waited += 300
         return setTimeout(go, 300)
       }
-      this.host = { key, text, mood }
-      this.say('Host', text)
-      SFX.say(spoken, true)
-      this.emit()
-      setTimeout(() => {
-        if (this.host?.key !== key) return
-        this.host = null
-        this.emit()
-      }, 6500)
+      this.note(text, mood)
     }
-    // after the cheer or groan has had its moment
     setTimeout(go, 2000)
+  }
+
+  /** Shows a message at the bottom of the screen for 6.5 seconds. */
+  private note(text: string, mood: HostLine['mood']) {
+    const key = ++this.uid
+    this.host = { key, text, mood }
+    this.emit()
+    setTimeout(() => {
+      if (this.host?.key !== key) return
+      this.host = null
+      this.emit()
+    }, 6500)
   }
 
   hideHost() {
@@ -703,6 +691,19 @@ export class Game {
     }, 450)
   }
 
+  /** Picks card `i`, or puts it back if it is already picked (the picker's grid). Up to four. */
+  toggle(i: number) {
+    const m = this.modal
+    if (m.quick) return
+    if (!m.picked.delete(i)) {
+      if (m.picked.size >= 4) return
+      m.picked.add(i)
+    }
+    SFX.pop()
+    m.idx = i
+    this.emit()
+  }
+
   /** Takes card `i` back out of the selection (the picker's basket). */
   unpick(i: number) {
     const m = this.modal
@@ -726,6 +727,7 @@ export class Game {
     } else {
       this.queued = cards
       this.say('Host', `You bought ${n} card${s} for the next round. They join when this round ends.`)
+      this.note(`${n} card${s} saved. ${n > 1 ? 'They play' : 'It plays'} automatically when the next round starts.`, 'saved')
     }
     this.closeModal()
     this.render()
