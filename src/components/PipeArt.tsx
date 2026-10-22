@@ -8,6 +8,13 @@ const VIEWBOX = `0 0 ${VB_W} ${VB_H}`
 /** The glass sphere in viewBox units; CSS in 02-panels.css places the canvas and glass to match. */
 export const GLOBE = { cx: 593, cy: 470, r: 400 }
 /** Ribbons were drawn for a sphere of radius 345 centred at (593, 490). */
+/**
+ * The blurred glows and running lights are off on every device. Browsers blur SVG on the processor
+ * and redo it whenever a ball rides past, which blanked phone screens during draws; the plain
+ * strokes still show the shapes. Set to true to bring them back.
+ */
+const GLOW = false
+
 const RIB_FIT = `translate(${GLOBE.cx} ${GLOBE.cy}) scale(${GLOBE.r / 345}) translate(-593 -490)`
 
 const BACK = [
@@ -23,7 +30,7 @@ const FRONT = [
 function Ribbon({ rot, d, glow = true }: { rot: number; d: string; glow?: boolean }) {
   return (
     <g transform={`${RIB_FIT} rotate(${rot} 593 490)`} fill="none" strokeLinecap="round">
-      {glow && <path d={d} stroke="#ff4df0" strokeWidth="40" opacity=".38" filter="url(#bl)" />}
+      {glow && GLOW && <path d={d} stroke="#ff4df0" strokeWidth="40" opacity=".38" filter="url(#bl)" />}
       <path d={d} stroke="#2a0b57" strokeWidth="30" />
       <path d={d} stroke="url(#gold)" strokeWidth="22" />
       <path d={d} stroke="#7df9ff" strokeWidth="7" />
@@ -45,6 +52,7 @@ function RibbonFlow({ rot, d }: { rot: number; d: string }) {
  * (without its glow) between the two dashes, so the first dash still passes under it.
  */
 function RibbonFlows({ set, cls }: { set: typeof BACK; cls: string }) {
+  if (!GLOW) return null
   return (
     <svg className={'pipes rib flows ' + cls} viewBox={VIEWBOX} aria-hidden="true">
       <RibbonFlow {...set[0]} />
@@ -137,7 +145,7 @@ function Collar({ x, y, tilt = 0, w = 88 }: { x: number; y: number; tilt?: numbe
       <rect x={-w / 2 - 4} y="-30" width={w + 8} height="20" rx="7" fill="url(#goldC)" />
       <rect x={-w / 2} y="-12" width={w} height="40" rx="6" fill="url(#goldC)" />
       <rect x={-w / 2} y="2" width={w} height="6" fill="#36d6ff" opacity=".9" />
-      <rect x={-w / 2} y="2" width={w} height="6" fill="#7df9ff" filter="url(#bl2)" />
+      {GLOW && <rect x={-w / 2} y="2" width={w} height="6" fill="#7df9ff" filter="url(#bl2)" />}
       <rect x={-w / 2} y="-12" width={w} height="3" fill="#4a2702" opacity=".55" />
     </g>
   )
@@ -150,20 +158,20 @@ export const PipeLayers = memo(function PipeLayers() {
         {PIPES.map(({ tube, ride }, i) => (
           <g key={i} fill="none" strokeLinecap="round">
             <path id={'pp' + i} d={ride} stroke="none" />
-            <path d={tube} stroke="#36d6ff" strokeWidth="88" opacity=".26" filter="url(#bl)" />
+            {GLOW && <path d={tube} stroke="#36d6ff" strokeWidth="88" opacity=".26" filter="url(#bl)" />}
             <path d={tube} stroke="#c8f6ff" strokeWidth="70" opacity=".55" />
             <path d={tube} stroke="#14236e" strokeWidth="62" opacity=".78" />
-            <path d={tube} stroke="#36d6ff" strokeWidth="28" opacity=".4" filter="url(#bl2)" />
+            {GLOW && <path d={tube} stroke="#36d6ff" strokeWidth="28" opacity=".4" filter="url(#bl2)" />}
             <path d={tube} stroke="#7df9ff" strokeWidth="9" opacity=".85" />
           </g>
         ))}
       </svg>
       {/* the running light, kept apart from the blurred glows (see RibbonFlows) */}
-      <svg className="pipes pipes-b flows" viewBox={VIEWBOX} aria-hidden="true">
+      {GLOW && <svg className="pipes pipes-b flows" viewBox={VIEWBOX} aria-hidden="true">
         {PIPES.map(({ tube }, i) => (
           <path key={i} className="flow" d={tube} fill="none" strokeLinecap="round" stroke="#fff" strokeWidth="5" strokeDasharray="34 260" opacity=".9" />
         ))}
-      </svg>
+      </svg>}
     </>
   )
 })
@@ -180,10 +188,10 @@ export const PipeBays = memo(function PipeBays() {
           <rect x={hole.x - 52} y={COLLAR_Y} width="104" height={hole.y - COLLAR_Y} fill="url(#goldC)" />
           <Collar x={hole.x} y={COLLAR_Y} w={92} />
           <circle cx={hole.x + 7} cy={hole.y + 6} r={HOLE_R + 6} fill="#5a3205" />
-          <circle cx={hole.x} cy={hole.y} r={HOLE_R + 4} fill="none" stroke={color} strokeWidth="16" opacity=".5" filter="url(#bl2)" />
+          {GLOW && <circle cx={hole.x} cy={hole.y} r={HOLE_R + 4} fill="none" stroke={color} strokeWidth="16" opacity=".5" filter="url(#bl2)" />}
           <circle cx={hole.x} cy={hole.y} r={HOLE_R} fill="url(#bayG)" stroke="url(#gold)" strokeWidth="15" />
           <circle cx={hole.x} cy={hole.y} r={HOLE_R - 17} fill={color} opacity=".14" />
-          <circle cx={hole.x} cy={hole.y} r={HOLE_R - 16} fill="none" stroke={color} strokeWidth="10" opacity=".7" filter="url(#bl2)" />
+          <circle cx={hole.x} cy={hole.y} r={HOLE_R - 16} fill="none" stroke={color} strokeWidth="10" opacity=".7" filter={GLOW ? 'url(#bl2)' : undefined} />
           <circle cx={hole.x} cy={hole.y} r={HOLE_R - 16} fill="none" stroke={color} strokeWidth="5" />
           <circle cx={hole.x} cy={hole.y} r={HOLE_R + 8} fill="none" stroke="#ffffff55" strokeWidth="2" />
         </g>

@@ -1,0 +1,17 @@
+/*
+ * No glows and no looping effects, on every device. Blurs, drop-shadows, frosted glass and endless
+ * pulses are what a phone's graphics memory runs out on during a draw, which blanked the screen.
+ */
+@media all{
+ *:not(:disabled),*::before,*::after{filter:none!important}
+ *,*::before,*::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ .halo,.orbit,.flow,.spark{display:none!important}
+ .cc.mid,.c.need,.calledp .ball.nx,.pickbtn::after,.hav::after,.hbars i,
+ .lwcup .st,.lwgrid i.w,.lwpv .spk,.lwbtn.gold,.lwball{animation:none!important}
+ .gl-back,.gl-shine{box-shadow:none!important}
+ .hero .gobj .spout,.hero .gobj .spout.fire{box-shadow:0 0 0 .2em #f6b93b,0 0 0 .36em #7a4d08!important}
+ .tb.empty{box-shadow:none!important}
+ .tkp .tk .grid5 .c.m,.tkp .tk .grid5 .c.need{box-shadow:none!important}
+ .tkp .tk .grid5 .c.need{outline:.14em solid #ffd84d;outline-offset:-.14em}
+ .noguide .tkp .tk .grid5 .c.need{outline:0}
+}

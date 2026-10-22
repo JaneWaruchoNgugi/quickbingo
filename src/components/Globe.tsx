@@ -10,6 +10,8 @@ import { PipeLayers, FrontRibbons, BackRibbons, PipeBays, PIPES, VB_W, VB_H } fr
 /** CSS left/top of a viewBox point inside the globe box. */
 const pos = (p: { x: number; y: number }) => ({ left: (p.x / VB_W) * 100 + '%', top: (p.y / VB_H) * 100 + '%' })
 
+/** Sparks out of a hole as a ball lands; off on every device to keep draws light. */
+const SPARKS = 0
 const SPARK_COLORS = ['#fde047', '#38bdf8', '#f472b6', '#fff', '#a3e635']
 
 /**
@@ -56,7 +58,7 @@ export function Globe() {
       const spouts = only === undefined ? all : all.slice(only, only + 1)
       spouts.forEach(e => {
         const r = e.getBoundingClientRect()
-        for (let k = 0; k < (LITE ? 3 : 12); k++) {
+        for (let k = 0; k < SPARKS; k++) {
           const d = document.createElement('i')
           d.className = 'spark'
           d.style.left = ((r.left + r.width / 2 - gr.left) / gr.width) * 100 + '%'
