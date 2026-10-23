@@ -48,7 +48,7 @@ export function QuickPick({ className }: { className?: string }) {
           <Zap aria-hidden="true" />
           {g.phase === 'buy' ? 'Instant play' : 'Next round'}
         </span>
-        <span className="qmeta">{QUICK_CARDS} cards · KSh each</span>
+        <span className="qmeta">{QUICK_CARDS} cards · price each</span>
       </div>
       <div className="qchips">
         {QUICK_PRICES.map(p => (
@@ -56,12 +56,12 @@ export function QuickPick({ className }: { className?: string }) {
             key={p}
             type="button"
             className="qchip"
-            aria-label={`${QUICK_CARDS} cards at KSh ${p} each, KSh ${p * QUICK_CARDS} total`}
+            aria-label={`${QUICK_CARDS} cards at KES ${p} each, KES ${p * QUICK_CARDS} total`}
             disabled={!g.canPick || p * QUICK_CARDS > g.pts}
             onClick={() => g.openQuick(p)}
           >
             <span className="qcoin">
-              <small>KSh</small>
+              <small>KES</small>
               <b>{p}</b>
             </span>
           </button>

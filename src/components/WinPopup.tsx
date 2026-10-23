@@ -17,7 +17,7 @@ function CountUp({ to }: { to: number }) {
     up(t0)
     return () => cancelAnimationFrame(raf)
   }, [to])
-  return <>KSh {v.toLocaleString('en-US')}</>
+  return <>KES {v.toLocaleString('en-US')}</>
 }
 
 /** Where the floating balls sit around the card (left/right edge, height). */
@@ -84,7 +84,7 @@ export function WinPopup() {
                 </span>
               ))}
             </div>
-            {b.price > 0 && <span className="price">KSh {b.price} card</span>}
+            {b.price > 0 && <span className="price">KES {b.price} card</span>}
           </div>
           <div className="lwgrid">
             {'BINGO'.split('').map((l, i) => (
@@ -107,6 +107,12 @@ export function WinPopup() {
             </div>
             {b.chip && <span className="lwchip">{b.chip}</span>}
           </div>
+          {b.total > 0 && (
+            <div className="lwtotal">
+              <span>Round total</span>
+              <b>KES {b.total.toLocaleString('en-US')}</b>
+            </div>
+          )}
           <div className="lwxp">
             <div className="gain">
               <Star aria-hidden="true" />+{b.gain} XP

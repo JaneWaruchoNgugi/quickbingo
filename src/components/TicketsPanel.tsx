@@ -15,8 +15,8 @@ export function TicketsPanel() {
   ]
 
   return (
-    <div className="gp tkp">
-      <div className="tabs">
+    <div className={'gp tkp' + (g.mine.length ? '' : ' nocards')}>
+      <div className="tabs" hidden={!g.mine.length}>
         {tabs.map(({ label, i, cls }) => (
           <button
             key={i}
@@ -55,7 +55,7 @@ export function TicketsPanel() {
       )}
       <div className={'frame' + (g.myBought ? ' bought' : '')}>
         <div className="badge" hidden={!g.myBought && !g.queued.length}>
-          {g.myBought && `✓ ${g.mine.length} CARD${g.mine.length > 1 ? 'S' : ''} BOUGHT · KSh ${total}`}
+          {g.myBought && `✓ ${g.mine.length} CARD${g.mine.length > 1 ? 'S' : ''} BOUGHT · KES ${total}`}
           {g.myBought && g.queued.length > 0 && ' · '}
           {g.queued.length > 0 && `${g.queued.length} SAVED FOR NEXT ROUND`}
         </div>
@@ -68,7 +68,7 @@ export function TicketsPanel() {
               <div key={i} className={'tk a' + (i % 4) + (won.size ? ' win' : '')}>
                 <div className="tkh">
                   <b>CARD {i + 1}</b>
-                  <span className="tkprice">KSh {t.price}</span>
+                  <span className="tkprice">KES {t.price}</span>
                   <span className="togo">
                     {won.size ? 'BINGO!' : bests[i] >= 4 ? '1 to go!' : `${5 - bests[i]} to go`}
                   </span>
@@ -91,6 +91,25 @@ export function TicketsPanel() {
               </div>
             )
           })}
+          {!g.mine.length && g.phase === 'buy' && (
+            // desktop: four faded cards stand in for the ones the player hasn't bought yet
+            <div className="ghosts" aria-hidden="true">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="tk ghost">
+                  <div className="grid5">
+                    {'BINGO'.split('').map((l, k) => (
+                      <div key={l} className={`hd h${k}`}>
+                        {l}
+                      </div>
+                    ))}
+                    {Array.from({ length: 25 }, (_, k) => (
+                      <div key={k} className="c" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {!g.mine.length && (
             <div className="empty">
               {g.phase === 'buy'

@@ -10,13 +10,13 @@ import { bestRow, buildPool, drawNum, lineCells, lines, makeGrid, pickHot, type 
 export type Phase = 'buy' | 'draw' | 'end'
 
 export interface ChatMsg { id: number; who: string; msg: string }
-export interface WinRow { id: number; label: string; x: number }
+export interface WinRow { id: number; label: string; x: number; round: number }
 export interface Toast { id: number; txt: string; cls: string }
 export interface Bot { name: string; ts: Grid[] }
 export interface Prefs { sfx: boolean; music: boolean; voice: boolean; guide: boolean }
 
-/** The message at the bottom of the screen: after a round, or about saved cards. */
-export interface HostLine { key: number; text: string; mood: 'win' | 'near' | 'lose' | 'saved' | 'live' }
+/** The message at the bottom of the screen about saved cards. */
+export interface HostLine { key: number; text: string; mood: 'saved' | 'live' }
 export type PrefKey = keyof Prefs
 
 export interface ConfettiPiece {
@@ -39,6 +39,8 @@ export interface BingoView {
   none: boolean
   plabel: string
   win: number
+  /** everything the player's cards have won so far this round, this win included */
+  total: number
   chip: string
   next: string
   /** last numbers called, shown as balls floating around the card */
@@ -117,6 +119,8 @@ export class Game {
   tray: (number | null)[] = Array(PER).fill(null)
   swirl = false
   winners: WinRow[] = []
+  /** counts rounds, so the winners list can tell this round's wins from earlier ones */
+  round = 0
   chatLog: ChatMsg[] = []
   toasts: Toast[] = []
   xp = 0
@@ -232,7 +236,8 @@ export class Game {
       name: BOT_NAMES[i % 12] + (i >= 12 ? i : ''),
       ts: Array.from({ length: 1 + rnd(2) }, makeGrid),
     }))
-    this.winners = []
+    // winners stay listed across rounds (capped at 20), so the panel isn't blank while tickets sell
+    this.round++
     this.phaseLabel = 'Ticket Buying Phase'
     this.tl = 'until draw'
     this.banner = 'Buy your tickets before the draw starts.'
@@ -275,7 +280,7 @@ export class Game {
       const m = Math.min(...bests.map(b => 5 - b))
       this.banner = m <= 0 ? 'LINE!' : m + ' TO A LINE'
     } else if (this.phase === 'end') {
-      this.banner = this.roundWin > 0 ? 'YOU WON KSh ' + this.roundWin : this.mine.length ? 'NO WIN THIS ROUND' : 'ROUND OVER'
+      this.banner = this.roundWin > 0 ? 'YOU WON KES ' + this.roundWin : this.mine.length ? 'NO WIN THIS ROUND' : 'ROUND OVER'
     }
     this.emit()
   }
@@ -293,9 +298,6 @@ export class Game {
     setTimeout(() => {
       if (this.mine.length) this.roundWin > 0 ? SFX.cheer(true) : SFX.aww()
     }, 800)
-    if (this.mine.length) {
-      this.hostAfterRound(this.roundWin)
-    }
     this.timer = window.setInterval(() => {
       // hold the finished round while the win popup is up, so the cards behind it still show the line
       if (this.bingo) return
@@ -451,9 +453,9 @@ export class Game {
           this.pts += pay
           this.batchWin += pay
           this.roundWin += pay
-          this.say('Host', 'You won ' + t.l + '! +KSh ' + pay)
+          this.say('Host', 'You won ' + t.l + '! +KES ' + pay)
         }
-        this.winners.unshift({ id: ++this.uid, label: t.l + ' · ' + who, x: t.x })
+        this.winners.unshift({ id: ++this.uid, label: t.l + ' · ' + who, x: t.x, round: this.round })
         // like the chat, keep the list short so it never grows for as long as the game is open
         if (this.winners.length > 20) this.winners.length = 20
         this.say('Host', who + ' won ' + t.l)
@@ -472,7 +474,8 @@ export class Game {
     if (hit < 0) return
     // a single other card on screen would hide the winning one: show the card that won
     if (this.tab && this.tab !== hit + 1) this.tab = hit + 1
-    this.showBingo(hit + 1, this.batchWin)
+    // a line that pays nothing (another player already took that prize) gets no popup
+    if (this.batchWin > 0) this.showBingo(hit + 1, this.batchWin)
   }
 
   // ---- win popup ----
@@ -530,13 +533,14 @@ export class Game {
       key,
       accent,
       title,
-      sub: 'CARD ' + card + (tk ? ' · KSh ' + tk.price + ' CARD' : ''),
+      sub: 'CARD ' + card + (tk ? ' · KES ' + tk.price + ' CARD' : ''),
       mini,
       none: !(win > 0),
       plabel: win > 0 ? (full ? 'FULL HOUSE WIN' : nl > 1 ? nl + ' LINES WIN' : 'LINE WIN') : 'LINE COMPLETE',
       win,
+      total: this.roundWin,
       chip: win > 0 && cur ? '×' + cur.x + ' · ' + cur.l.toUpperCase() : '',
-      next: next ? 'Next: ' + next.l + ' pays KSh ' + Math.round(pr * next.x) : 'Keep going!',
+      next: next ? 'Next: ' + next.l + ' pays KES ' + Math.round(pr * next.x) : 'Keep going!',
       stars,
       starsOn: 0,
       lvl: nlv + 1,
@@ -562,24 +566,6 @@ export class Game {
     setTimeout(() => SFX.cheer(win > 0), 500)
     clearTimeout(this.bingoTimer)
     this.bingoTimer = window.setTimeout(() => this.hideBingo(), 6500)
-  }
-
-  /**
-   * After a round: one short message with what the round paid, or a nudge to try again. It waits
-   * for the cheer or groan, and for the win popup to close, so the two never overlap.
-   */
-  private hostAfterRound(win: number) {
-    const [text, mood]: [string, HostLine['mood']] =
-      win > 0 ? [`You won KSh ${win} this round!`, 'win'] : ['No win this round. Try again next round!', 'lose']
-    let waited = 0
-    const go = () => {
-      if (this.bingo && waited < 8000) {
-        waited += 300
-        return setTimeout(go, 300)
-      }
-      this.note(text, mood)
-    }
-    setTimeout(go, 2000)
   }
 
   /** Shows a message at the bottom of the screen for 6.5 seconds. */

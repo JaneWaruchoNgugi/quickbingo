@@ -25,7 +25,29 @@
 /* The globe: a thin glass outline instead of the thick pink rim. */
 .gobj .gl-shine{border-width:1.5px!important;border-color:#ffc2f866!important}
 
-/* Phone and tablet, while cards are on sale: the countdown sits over the middle of the globe. */
-.hero .hring{left:50%!important;top:31%!important;width:clamp(110px,36%,190px)!important;transform:translate(-50%,-50%);z-index:12;container-type:inline-size;box-shadow:0 8px 30px #000c!important}
-.hero .hring>div{width:86%;background:#0a0c2ef0;font-size:22cqw!important;line-height:1}
-.hero .hring small{font-size:8.5cqw!important;margin-top:.35em;letter-spacing:.04em;text-transform:uppercase;color:#cfd6ff}
+/*
+ * Phone and tablet, while cards are on sale: the draw countdown is a small badge at the top of
+ * the stage, clear of the balls. Timer icon, label and time, and a bar along the bottom that
+ * runs down with the clock. The last five seconds turn it red.
+ */
+.hcount{display:none}
+@media(max-width:899px){
+ .hero.buying .hcount{display:flex}
+ .hcount{--hc:#ffd36e;position:absolute;z-index:12;left:50%;top:3%;transform:translateX(-50%);align-items:center;gap:10px;min-width:176px;padding:8px 16px 11px 9px;border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,#1a1452f2,#0b0a2ef2);border:1.5px solid color-mix(in srgb,var(--hc) 45%,#0000);box-shadow:0 8px 24px #000b;transition:border-color .3s}
+ .hcount .hic{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--hc) 18%,#0000);color:var(--hc);transition:color .3s,background .3s}
+ .hcount .hic svg{width:19px;height:19px;stroke-width:2.2}
+ .hcount .htx{display:flex;flex-direction:column;line-height:1}
+ .hcount small{font:800 10px var(--display);letter-spacing:.12em;text-transform:uppercase;color:#aab4e6}
+ .hcount b{margin-top:4px;font:900 26px var(--display);color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+ .hcount i{position:absolute;left:0;right:0;bottom:0;height:3px;background:#ffffff14}
+ .hcount u{display:block;height:100%;background:var(--hc);transition:width 1s linear,background .3s}
+ .hcount.hot{--hc:#ff5a5f}
+ .hcount.hot b{color:#ffd0d1}
+}
+@media(min-width:600px) and (max-width:899px){
+ .hcount{top:3.5%;min-width:210px;padding:10px 20px 13px 11px;gap:12px}
+ .hcount .hic{width:40px;height:40px}.hcount .hic svg{width:22px;height:22px}
+ .hcount small{font-size:11px}.hcount b{font-size:31px}
+}
+@media(prefers-reduced-motion:reduce){.hcount u{transition:none}}

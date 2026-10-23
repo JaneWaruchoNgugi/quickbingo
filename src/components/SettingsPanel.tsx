@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Check, Music, Settings, Sparkles, Volume2, X, type LucideIcon } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Music, Settings, Sparkles, Volume2, X, type LucideIcon } from 'lucide-react'
 import { useGame } from '../hooks/useGame'
 import type { PrefKey } from '../game/store'
 
@@ -9,56 +10,108 @@ const ROWS: { k: PrefKey; label: string; hint: string; Icon: LucideIcon; c: stri
   { k: 'guide', label: 'Hint glow', hint: 'Lights up the numbers you need', Icon: Sparkles, c: '#22c55e' },
 ]
 
-/** Gear button (top left) with the sound, music and guide-light switches. */
+/**
+ * Gear button (top left) with the sound, music and guide-light switches. On tablets and desktops
+ * the panel drops down from the gear; on phones it is a sheet at the bottom of the screen.
+ */
 export function SettingsPanel() {
   const g = useGame()
   const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState<{ top: number; left: number }>()
+  const gear = useRef<HTMLButtonElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+
+  // the panel is rendered at the body, so place it under the gear wherever the scaled stage put it
+  useLayoutEffect(() => {
+    if (!open) return
+    const place = () => {
+      const r = gear.current!.getBoundingClientRect()
+      setPos({ top: r.bottom + 10, left: Math.max(12, r.left) })
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [open])
 
   useEffect(() => {
+    if (!open) return
+    panel.current?.focus()
     const close = (e: PointerEvent) => {
       if (!(e.target as Element).closest('.spanel,#snd')) setOpen(false)
     }
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false)
+        gear.current?.focus()
+      }
+    }
     document.addEventListener('pointerdown', close)
-    return () => document.removeEventListener('pointerdown', close)
-  }, [])
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
 
   return (
     <>
-      <div className="spanel" hidden={!open} role="dialog" aria-label="Settings">
-        <div className="shead">
-          <Settings aria-hidden="true" />
-          <b>Settings</b>
-          <button className="sx" aria-label="Close settings" onClick={() => setOpen(false)}>
-            <X aria-hidden="true" />
-          </button>
-        </div>
-        {ROWS.map(({ k, label, hint, Icon, c }) => (
-          <div className={'srow' + (g.prefs[k] ? ' on' : '')} key={k} style={{ '--sc': c } as React.CSSProperties}>
-            <span className="sico" aria-hidden="true">
-              <Icon />
-            </span>
-            <span className="stx">
-              <b>{label}</b>
-              <small>{hint}</small>
-            </span>
-            <button
-              className={'sw' + (g.prefs[k] ? ' on' : '')}
-              role="switch"
-              aria-checked={g.prefs[k]}
-              aria-label={label}
-              onClick={e => {
-                e.stopPropagation()
-                g.setPref(k, !g.prefs[k])
-              }}
+      {open &&
+        createPortal(
+          <>
+            <div className="sback" aria-hidden="true" />
+            <div
+              ref={panel}
+              className="spanel"
+              role="dialog"
+              aria-labelledby="stitle"
+              tabIndex={-1}
+              style={pos && ({ '--st': pos.top + 'px', '--sl': pos.left + 'px' } as React.CSSProperties)}
             >
-              <i>{g.prefs[k] ? <Check aria-hidden="true" /> : <X aria-hidden="true" />}</i>
-            </button>
-          </div>
-        ))}
-      </div>
+              <div className="shead">
+                <span className="sico" aria-hidden="true">
+                  <Settings />
+                </span>
+                <h2 id="stitle">Settings</h2>
+                <button className="sx" aria-label="Close settings" onClick={() => setOpen(false)}>
+                  <X aria-hidden="true" />
+                </button>
+              </div>
+              <ul className="slist">
+                {ROWS.map(({ k, label, hint, Icon, c }) => (
+                  <li key={k} style={{ '--sc': c } as React.CSSProperties}>
+                    <button
+                      className={'srow' + (g.prefs[k] ? ' on' : '')}
+                      role="switch"
+                      aria-checked={g.prefs[k]}
+                      onClick={e => {
+                        e.stopPropagation()
+                        g.setPref(k, !g.prefs[k])
+                      }}
+                    >
+                      <span className="sico" aria-hidden="true">
+                        <Icon />
+                      </span>
+                      <span className="stx">
+                        <b>{label}</b>
+                        <small>{hint}</small>
+                      </span>
+                      <span className="sw" aria-hidden="true">
+                        <i />
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>,
+          document.body,
+        )}
       <button
+        ref={gear}
         id="snd"
         aria-label="Settings"
+        aria-expanded={open}
+        aria-haspopup="dialog"
         title="Settings"
         onClick={e => {
           e.stopPropagation()

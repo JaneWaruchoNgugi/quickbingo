@@ -5,7 +5,6 @@
 .tbal{justify-self:end}
 .topbar #snd{position:static!important;width:2.6em!important;height:2.6em!important;border-radius:50%;border:1px solid #ffffff2e;background:#120a35cc;color:#dfe3ff;box-shadow:0 0 .8em #7c3aed44}
 .topbar #snd svg{width:52%;height:52%}
-.spanel{left:12px!important;right:auto!important}
 .tlogo{display:flex;align-items:baseline;font:900 2.7em/1 var(--display);letter-spacing:.01em;font-style:italic;transform:skewX(-4deg)}
 .tlogo span{-webkit-background-clip:text;background-clip:text;color:#0000;padding:0 .04em}
 .tlogo .l1{background-image:linear-gradient(180deg,#fff6c8 8%,#ffd24a 38%,#ff9a1a 64%,#e0550a 90%);-webkit-text-stroke:.03em #7a2d00;filter:drop-shadow(0 .06em 0 #8a3500) drop-shadow(0 .1em 0 #4a1a00) drop-shadow(0 0 .3em #ffb02e88)}

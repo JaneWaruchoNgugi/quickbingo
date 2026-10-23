@@ -105,7 +105,7 @@ export function drawNum(ex: Set<number>, hot: Set<number>) {
 }
 
 /**
- * Ten cards priced KSh 10–100. 260 simulated rounds estimate each candidate's chance of a
+ * Ten cards priced KES 10–100. 260 simulated rounds estimate each candidate's chance of a
  * line (p1) and of two lines (p2); better cards cost more.
  */
 export function buildPool(hot: Set<number>): Card[] {

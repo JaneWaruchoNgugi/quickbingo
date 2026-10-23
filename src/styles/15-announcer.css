@@ -1,6 +1,5 @@
-/* After a round: one short message docked at the bottom of the screen, gold for a win. */
+/* One short message docked at the bottom of the screen, about saved cards. */
 .host{--m:#8b93ff;position:fixed;z-index:70;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(480px,calc(100vw - 24px));display:flex;align-items:center;gap:12px;padding:12px 44px 12px 12px;border-radius:16px;background:#14113f;border:1.5px solid var(--m);box-shadow:0 10px 30px #000a;cursor:pointer;animation:hostin .35s ease-out both,hostout .3s 6.2s ease-in forwards}
-.host.win{--m:#ffd24a}
 @keyframes hostin{from{transform:translate(-50%,40px);opacity:0}}
 @keyframes hostout{to{transform:translate(-50%,40px);opacity:0}}
 .hav{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--m) 20%,#0000);color:var(--m)}
@@ -30,7 +29,7 @@
 .tkp .saved small{display:block;margin-top:2px;font-size:12px;line-height:1.25;color:#aab0d6}
 .tkp .saved .schips{display:flex;gap:4px;flex:none}
 .tkp .saved .schips i{font:800 11px var(--display);font-style:normal;padding:3px 6px;border-radius:6px;background:#38bdf826;color:#bfe9ff}
-.tkp .saved .schips i::before{content:"KSh "}
+.tkp .saved .schips i::before{content:"KES "}
 @media(max-width:599px){.tkp .saved .schips{display:none}}
 @media(min-width:900px){.tkp .saved{padding:7px 10px;margin-bottom:.4em}.tkp .saved .sic{width:28px;height:28px}.tkp .saved b{font-size:12px}.tkp .saved small{font-size:11px}.tkp .saved .schips{display:none}}
 /* Phone, round running with cards saved for the next one: only the saved strip shows, above the called numbers. */
